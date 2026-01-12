@@ -216,6 +216,14 @@ def main():
 
     # create model
     model = create_model()
+    model.summary()
+
+    #
+    history = model.fit(train_generator, 
+      validation_data=valid_generator,
+      steps_per_epoch=100, 
+      validation_steps=25, 
+      epochs = 1)
 
 
     
@@ -305,7 +313,7 @@ drive.mount("/content/drive")
 from pathlib import Path
 
 PROJECT_ROOT = Path(__file__).resolve().parents[2]
-DATA_DIR = PROJECT_ROOT / "data"
+DATA_DIR = PROJECT_ROOT / "data"     # IN MY CASE i also include nih
 
 
 -- download model
@@ -327,7 +335,7 @@ drive.mount("/content/drive")
 !pip install -r requirements.txt
 
 import os
-os.environ["DATA_ROOT"] = "/content/drive/MyDrive/data/my_project"
+os.environ["DATA_ROOT"] = "/content/drive/MyDrive/data/my_project"  # hast nih
 
 !python scripts/train.py --config configs/wide_deep.yaml
 """
