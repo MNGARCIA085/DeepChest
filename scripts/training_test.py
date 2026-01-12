@@ -11,12 +11,57 @@ import tensorflow as tf
 import pandas as pd
 
 
+
+
+
+from pathlib import Path
+import os
+
+def get_data_root() -> Path:
+    try:
+        return Path(os.environ["DATA_ROOT"]).resolve()
+    except KeyError:
+        raise RuntimeError(
+            "DATA_ROOT is not set. "
+            "Set it via environment variable."
+        )
+
+
+
+
+print(get_data_root())
+
+
+
+#IMAGE_DIR = "data/nih/images-small/"
+# ver lo de nih; lo inclui en la variable de entorno
+
+
+DATA_ROOT = get_data_root()
+
+IMAGE_DIR = DATA_ROOT/"images-small/"
+TRAIN_PATH = DATA_ROOT/ "train-small.csv"
+VALID_PATH = DATA_ROOT/ "valid-small.csv"
+TEST_PATH = DATA_ROOT/ "test.csv"
+
+
+
+
+
+
+
+
 # adapt appropiately in colab (but firsd, local test)
 def load_data():
-	train_df = pd.read_csv("data/nih/train-small.csv")
-	valid_df = pd.read_csv("data/nih/valid-small.csv")
-	test_df = pd.read_csv("data/nih/test.csv")
-	return train_df, valid_df, test_df
+    """
+    train_df = pd.read_csv("data/nih/train-small.csv")
+    valid_df = pd.read_csv("data/nih/valid-small.csv")
+    test_df = pd.read_csv("data/nih/test.csv")
+    """
+    train_df = pd.read_csv(TRAIN_PATH)
+    valid_df = pd.read_csv(VALID_PATH)
+    test_df = pd.read_csv(TEST_PATH)
+    return train_df, valid_df, test_df
 
 
 
@@ -68,7 +113,7 @@ def get_train_generator(df, image_dir, x_col, y_cols, shuffle=True, batch_size=8
 
 
 def get_test_and_valid_generator(valid_df, test_df, train_df, image_dir, x_col, y_cols, sample_size=100, 
-									batch_size=8, seed=1, target_w = 320, target_h = 320):
+                                    batch_size=8, seed=1, target_w = 320, target_h = 320):
 
 
 
@@ -125,10 +170,10 @@ def get_test_and_valid_generator(valid_df, test_df, train_df, image_dir, x_col, 
 
 
 def create_generators(train_df, valid_df, test_df, labels): # labels....
-	IMAGE_DIR = "data/nih/images-small/"
-	train_generator = get_train_generator(train_df, IMAGE_DIR, "Image", labels)
-	valid_generator, test_generator= get_test_and_valid_generator(valid_df, test_df, train_df, IMAGE_DIR, "Image", labels)
-	return train_generator, valid_generator, test_generator
+    #IMAGE_DIR = "data/nih/images-small/"
+    train_generator = get_train_generator(train_df, IMAGE_DIR, "Image", labels)
+    valid_generator, test_generator= get_test_and_valid_generator(valid_df, test_df, train_df, IMAGE_DIR, "Image", labels)
+    return train_generator, valid_generator, test_generator
 
 
 # class imbalance................
@@ -136,23 +181,23 @@ def create_generators(train_df, valid_df, test_df, labels): # labels....
 
 
 def create_model():
-	# create the base pre-trained model
-	#base_model = DenseNet121(weights='./nih/densenet.hdf5', include_top=False)
-	base_model = DenseNet121(include_top=False)
+    # create the base pre-trained model
+    #base_model = DenseNet121(weights='./nih/densenet.hdf5', include_top=False)
+    base_model = DenseNet121(include_top=False)
 
-	x = base_model.output
+    x = base_model.output
 
-	# add a global spatial average pooling layer
-	x = GlobalAveragePooling2D()(x)
+    # add a global spatial average pooling layer
+    x = GlobalAveragePooling2D()(x)
 
-	# and a logistic layer
-	predictions = Dense(len(labels), activation="sigmoid")(x)
+    # and a logistic layer
+    predictions = Dense(len(labels), activation="sigmoid")(x)
 
-	model = Model(inputs=base_model.input, outputs=predictions)
-	#model.compile(optimizer='adam', loss=get_weighted_loss(pos_weights, neg_weights))
-	model.compile(optimizer='adam', loss=tf.keras.losses.BinaryCrossentropy())
+    model = Model(inputs=base_model.input, outputs=predictions)
+    #model.compile(optimizer='adam', loss=get_weighted_loss(pos_weights, neg_weights))
+    model.compile(optimizer='adam', loss=tf.keras.losses.BinaryCrossentropy())
 
-	return model
+    return model
 
 
 
@@ -160,24 +205,129 @@ def create_model():
 def main():
 
 
-	# load data
-	train_df, valid_df, test_df = load_data()
+    # load data
+    train_df, valid_df, test_df = load_data()
 
-	# create generators
-	train_generator, valid_generator, test_generator = create_generators(train_df, valid_df, test_df, labels)
-
-	# create model
-	model = create_model()
+    print(train_df.head())
 
 
-	# train model ; fit_generator
-	history = model.fit(train_generator, 
-                              validation_data=valid_generator,
-                              #steps_per_epoch=100, 
-                              #validation_steps=25, 
-                              epochs = 1)
+    # create generators
+    train_generator, valid_generator, test_generator = create_generators(train_df, valid_df, test_df, labels)
+
+    # create model
+    model = create_model()
+
+
+    
 
 
 
 if __name__==main():
-	main()
+    main()
+
+
+
+#sed -i 's/\xC2\xA0/ /g; s/\t/    /g' scripts/training_test.py
+
+
+
+"""
+history = model.fit(train_generator, 
+      validation_data=valid_generator,
+      steps_per_epoch=100, 
+      validation_steps=25, 
+      epochs = 1)
+"""
+
+
+
+
+
+"""
+Data root via env. variable
+
+
+
+
+console -> export DATA_ROOT=/absolute/path/to/data/my_project
+console -> export DATA_ROOT=/home/marcos/Escritorio/AI-prod/DeepChest/data/nih
+
+
+
+
+from pathlib import Path
+import os
+
+def get_data_root() -> Path:
+    try:
+        return Path(os.environ["DATA_ROOT"]).resolve()
+    except KeyError:
+        raise RuntimeError(
+            "DATA_ROOT is not set. "
+            "Set it via environment variable."
+        )
+
+
+everywhere else:
+
+DATA_ROOT = get_data_root()
+train_path = DATA_ROOT / "nih/train-small.csv"
+
+
+
+"""
+
+
+
+
+
+
+
+
+"""
+# 1. Mount Drive
+from google.colab import drive
+drive.mount("/content/drive")
+
+# 2. Clone repo
+!git clone https://github.com/you/project.git
+%cd project
+
+# 3. Install deps
+!pip install -r requirements.txt
+
+# 4. Run training
+!python scripts/train.py --config configs/wide_deep.yaml
+
+
+-- path to proj.
+
+from pathlib import Path
+
+PROJECT_ROOT = Path(__file__).resolve().parents[2]
+DATA_DIR = PROJECT_ROOT / "data"
+
+
+-- download model
+from google.colab import files
+files.download("model.pt")
+
+
+
+"""
+
+
+
+"""
+from google.colab import drive
+drive.mount("/content/drive")
+
+!git clone https://github.com/you/my_project.git
+%cd my_project
+!pip install -r requirements.txt
+
+import os
+os.environ["DATA_ROOT"] = "/content/drive/MyDrive/data/my_project"
+
+!python scripts/train.py --config configs/wide_deep.yaml
+"""
