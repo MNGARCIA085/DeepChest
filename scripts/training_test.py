@@ -339,3 +339,46 @@ os.environ["DATA_ROOT"] = "/content/drive/MyDrive/data/my_project"  # hast nih
 
 !python scripts/train.py --config configs/wide_deep.yaml
 """
+
+
+
+"""
+
+
+
+my bets:
+def weighted_bce_loss(pos_weights):
+    def loss(y_true, logits):
+        return tf.reduce_mean(
+            tf.nn.weighted_cross_entropy_with_logits(
+                labels=y_true,
+                logits=logits,
+                pos_weight=pos_weights
+            )
+        )
+    return loss
+
+
+model.add(Dense(14))  # logits, activation=None
+
+loss = weighted_bce_loss(pos_weights)
+
+model.compile(
+    optimizer="adam",
+    loss=loss,
+    metrics=[tf.keras.metrics.AUC(curve="ROC", multi_label=True)]
+)
+
+-------------------------
+
+
+
+weigheted loss
+model.add(Dense(14))  # no activation
+
+loss = tf.keras.losses.BinaryCrossentropy(from_logits=True)
+
+inf/eval
+probs = tf.sigmoid(logits)
+preds = probs > threshold
+"""
