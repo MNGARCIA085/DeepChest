@@ -89,10 +89,102 @@ def main(cfg: DictConfig):
         ],
     )
 
-    trainer.fit(train_gen, val_gen, 1, 100, 25, callbacks)
+
+    
+    #trainer.fit(train_gen, val_gen, 1, 100, 25, callbacks)
+    #print(trainer.model)
+    
+
+    # save model, for quick test and load it later
+    #trainer.model.save("test_model.keras")
 
 
-    print(trainer.model)
+    
+    from tensorflow import keras
+    #from your_module import SimpleCNN  # wherever it is defined
+
+    model = keras.models.load_model(
+        "test_model.keras",
+        compile=False, #if i dont pass loss; good for quick test; i can do this since i dont need it for inference
+                    # i aslo dont need it if a compute metrics myself; but KEras do need for model.eval...
+        custom_objects={"SimpleCNN": SimpleCNN},
+        #custom_objects={"SimpleCNN": SimpleCNN, "loss": weighted_bce(pos_weights)}
+    )
+
+    print(model)
+
+
+
+    
+
+    #--------------------preds test--------------------------------
+    from deep_chest.inference.base import Predictor
+
+    predictor = Predictor(model)
+
+    #aux = predictor.predict_logits(val_gen)
+    #print(aux)
+
+    #aux = predictor.predict_probs(val_gen)
+    #print(aux)
+
+    probs, y_true = predictor.predict_with_targets(val_gen)
+    print(probs) # then i should pass through a threshold
+    print(y_true)
+
+
+    #--------eval test-------------
+    threshold = 0.5
+    preds = (probs >= threshold).astype(int)
+
+    from sklearn.metrics import classification_report
+
+    print(classification_report(
+        y_true,
+        preds,
+        zero_division=0
+    ))
+
+
+
+    # per-class metrics
+    #precision = (preds & targets).sum(axis=0) / np.maximum(preds.sum(axis=0), 1)
+    #recall    = (preds & targets).sum(axis=0) / np.maximum(targets.sum(axis=0), 1)
+
+    # per-class thresholds
+    import numpy as np
+    thresholds = np.array([0.3, 0.5, 0.4, 0.4, 0.3, 0.5, 0.4, 0.4,0.3, 0.5, 0.4, 0.4,0.1, 0.2])  # shape (14,)
+    preds = (probs >= thresholds).astype(int)
+    print(preds)
+
+
+
+
+
+
+    # ------------ 1 sampel ------------
+    print(data.train_df.iloc[0].Image)
+
+    one_path = TRAIN_PATH / data.train_df.iloc[0].Image
+    #print(one_path)
+
+    one_path = "/home/marcos/Escritorio/AI-prod/DeepChest/data/nih/images-small/" + str(data.train_df.iloc[0].Image)
+    print(one_path)
+
+    #---only 1 sample----
+    #preprocess_image(self, image_path):
+    x = data.preprocess_image(one_path)
+    #print(x)
+
+    s = predictor.predict_one_logits(x)
+    print(s)
+
+
+
+
+
+
+
 
 
 

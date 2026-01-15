@@ -2,6 +2,7 @@ import tensorflow as tf
 from tensorflow.keras import layers
 
 
+
 class SimpleCNN(tf.keras.Model):
     def __init__(
         self,
@@ -15,6 +16,7 @@ class SimpleCNN(tf.keras.Model):
         dropout_rate=0.5,
         use_batchnorm=True,
         name="simple_cnn_baseline",
+        **kwargs,
     ):
         super().__init__(name=name)
 
@@ -73,6 +75,8 @@ class SimpleCNN(tf.keras.Model):
         x = self.fc(x)
         x = self.dropout(x, training=training)
         return self.classifier(x)
+
+
 
 
 
