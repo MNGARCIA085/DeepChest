@@ -1,0 +1,8 @@
+input_shape: (320, 320, 3)
+num_classes: 14
+conv_filters: [32, 64, 128]
+kernel_sizes: [3, 3, 3]
+use_pooling: [true, true, false]
+pool_sizes: [2, 2, 2]
+dense_units: 128
+dropout_rate: 0.5

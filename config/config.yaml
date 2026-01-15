@@ -1,0 +1,20 @@
+model_type: "cnn"  # mlp, gcn, schnet
+
+
+defaults:
+  - preprocessor: preprocessor
+  #- training: cnn
+  #- override hydra/launcher: joblib
+  - _self_
+
+
+random_state: 42
+exp_name: deep_chest
+
+
+
+#run_tuning_name: tuning
+#run_training_name: training
+#hydra:
+#  launcher:
+#    n_jobs: 2

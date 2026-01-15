@@ -7,7 +7,7 @@ from tensorflow.keras.preprocessing.image import (
     img_to_array,
 )
 
-class ChestXrayDataModule:
+class DataModule:
     def __init__(
         self,
         train_csv,
@@ -21,7 +21,7 @@ class ChestXrayDataModule:
         preprocess_fn=None,
         seed=1,
     ):
-        self.train_csv = train_csv
+        self.train_csv = train_csv # path
         self.val_csv = val_csv
         self.test_csv = test_csv
         self.image_dir = image_dir
@@ -35,6 +35,8 @@ class ChestXrayDataModule:
         self.train_df = None
         self.val_df = None
         self.test_df = None
+
+
 
     # ---------- data loading ----------
     def load_data(self):
@@ -106,6 +108,23 @@ class ChestXrayDataModule:
             ),
             "seed": self.seed,
         }
+
+
+    #-----------------for weighting the loss--------maybe log it later----------
+    @staticmethod
+    def compute_pos_weights_from_generator(gen):
+        labels = gen.labels
+        N = labels.shape[0]
+
+        pos_freq = labels.sum(axis=0) / N
+        neg_freq = 1 - pos_freq
+
+        print(pos_freq)
+        print(neg_freq)
+        return neg_freq / pos_freq, pos_freq, neg_freq
+    # check code later!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+
+
 
 
 """
