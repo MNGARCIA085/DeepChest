@@ -1,6 +1,8 @@
 import numpy as np
 import tensorflow as tf
 
+# add thresholded preds?
+
 
 class Predictor:
     """
@@ -11,17 +13,13 @@ class Predictor:
     def __init__(self, model: tf.keras.Model):
         self.model = model
 
-    # ---------- batch predictions ----------
-
+    # ---------- Batch preds ----------
     def predict_logits(self, generator, steps=None):
         return self.model.predict(generator, steps=steps)
 
     def predict_probs(self, generator, steps=None):
         logits = self.predict_logits(generator, steps=steps)
         return tf.nn.sigmoid(logits).numpy()
-
-
-
 
 
     def predict_with_targets(self, generator, steps=None):
@@ -44,36 +42,7 @@ class Predictor:
         return np.vstack(probs), np.vstack(targets)
 
 
-
-    """
-    better version
-    def predict_with_targets(self, generator, steps=None):
-    if steps is None:
-        steps = len(generator) if hasattr(generator, "__len__") else None
-        if steps is None:
-            raise ValueError("steps must be set for infinite generators")
-
-    all_probs = []
-    all_targets = []
-
-    # Iterate once
-    for i, (x, y) in enumerate(generator):
-        if i >= steps:
-            break
-        
-        # Keep predictions on device as long as possible
-        logits = self.model(x, training=False)
-        probs = tf.sigmoid(logits)
-        
-        all_probs.append(probs.numpy())
-        all_targets.append(y)
-
-    return np.concatenate(all_probs, axis=0), np.concatenate(all_targets, axis=0)
-    """
-
-
     # ---------- single sample ----------
-
     def predict_one_logits(self, x):
         """
         x: np.ndarray or tf.Tensor of shape (1, H, W, C)
@@ -87,15 +56,44 @@ class Predictor:
 
 
 
+
+
 """
 predictor = Predictor(model)
 
-# 1️⃣ Raw logits
+# Raw logits
 logits = predictor.predict_logits(test_generator)
 
-# 2️⃣ Probabilities (sigmoid)
+# Probabilities (sigmoid)
 probs = predictor.predict_probs(test_generator)
 
-# 3️⃣ Probabilities + true labels
+# Probabilities + true labels
 probs, targets = predictor.predict_with_targets(test_generator)
+"""
+
+
+"""
+better version
+def predict_with_targets(self, generator, steps=None):
+if steps is None:
+    steps = len(generator) if hasattr(generator, "__len__") else None
+    if steps is None:
+        raise ValueError("steps must be set for infinite generators")
+
+all_probs = []
+all_targets = []
+
+# Iterate once
+for i, (x, y) in enumerate(generator):
+    if i >= steps:
+        break
+    
+    # Keep predictions on device as long as possible
+    logits = self.model(x, training=False)
+    probs = tf.sigmoid(logits)
+    
+    all_probs.append(probs.numpy())
+    all_targets.append(y)
+
+return np.concatenate(all_probs, axis=0), np.concatenate(all_targets, axis=0)
 """
