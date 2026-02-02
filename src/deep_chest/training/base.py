@@ -19,6 +19,16 @@ class Trainer:
             metrics=metrics or [],
         )
 
+
+    # recompile
+    """ or maybe jhust call compile again with other data
+    def recompile(self):
+        if self._compile_args is None:
+            raise RuntimeError("Compile must be called first")
+        self.model.compile(**self._compile_args)
+    """
+
+
     def fit(
         self,
         train_gen,
@@ -44,19 +54,49 @@ class Trainer:
 
 
 
-
 class TransferLearningTrainer(Trainer):
-    def __init__(self, model, backbone_name, *args, **kwargs):
-        super().__init__(model, *args, **kwargs)
+    def __init__(self, model, backbone_name):
+        super().__init__(model)
         self.backbone = model.get_layer(backbone_name)
 
     def freeze_backbone(self):
         self.backbone.trainable = False
+    
+
+        """
+        explict is safer
+        def freeze_backbone(self):
+            for layer in self.backbone.layers:
+                layer.trainable = False
+        """
+
 
     def unfreeze_top_layers(self, n_layers):
         for layer in self.backbone.layers[-n_layers:]:
             layer.trainable = True
 
+
+
+
+"""
+
+
+about tl with effnet
+
+self.backbone.layers[-1] maybe juts batch norm.....
+
+
+def unfreeze_top_layers(self, n_layers):
+    for layer in reversed(self.backbone.layers):
+        if n_layers == 0:
+            break
+        if not isinstance(layer, tf.keras.layers.BatchNormalization):
+            layer.trainable = True
+            n_layers -= 1
+
+
+
+"""
 
 
 

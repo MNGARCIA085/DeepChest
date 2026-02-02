@@ -33,6 +33,8 @@ class TransferLearningTrainer(BaseTrainer):
         for layer in self.backbone.layers[-n_layers:]:
             layer.trainable = True
 
+    # self.recompile if i dont do it in other place!!!!!!!!!!
+
 trainer = TransferLearningTrainer(
     model=model,
     backbone_name="efficientnetb0",
@@ -72,8 +74,7 @@ trainer.freeze_backbone()
 trainer.compile()  # REQUIRED after changing trainable flags
 
 
-trainer.freeze_backbone()
-trainer.compile()  # REQUIRED after changing trainable flags
+
 
 
 --
