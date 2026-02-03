@@ -1,0 +1,5 @@
+defaults:
+  - /models: cnn
+  - /training: cnn
+
+name: cnn

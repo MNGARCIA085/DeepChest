@@ -1,0 +1,5 @@
+defaults:
+  - /models: densenet
+  - /training: densenet
+
+name: densenet

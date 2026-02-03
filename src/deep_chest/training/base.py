@@ -20,15 +20,6 @@ class Trainer:
         )
 
 
-    # recompile
-    """ or maybe jhust call compile again with other data
-    def recompile(self):
-        if self._compile_args is None:
-            raise RuntimeError("Compile must be called first")
-        self.model.compile(**self._compile_args)
-    """
-
-
     def fit(
         self,
         train_gen,

@@ -130,7 +130,7 @@ def main(cfg: DictConfig):
 
 
 
-
+    """
     trainer = TransferLearningTrainer(model=model, backbone_name="backbone") 
 
     print_trainable_layers(model)
@@ -144,12 +144,7 @@ def main(cfg: DictConfig):
 
 
     print_trainable_layers(model)
-
-
-
-    return
-
-
+    """
 
 
 
@@ -179,6 +174,24 @@ def main(cfg: DictConfig):
         steps_per_epoch=100,
         validation_steps=25
     )
+
+    # make preds to test
+    from deep_chest.inference.base import Predictor
+
+    predictor = Predictor(model)
+
+    #aux = predictor.predict_logits(val_gen)
+    #print(aux)
+
+    #aux = predictor.predict_probs(val_gen)
+    #print(aux)
+
+    probs, y_true = predictor.predict_with_targets(val_gen)
+    print(probs) # then i should pass through a threshold
+    print(y_true)
+
+
+    print(probs.shape)
 
 
 
