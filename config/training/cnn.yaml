@@ -1,2 +1,5 @@
-epochs: 5
-lr: 1e-4
+strategy: standard
+
+phase1:
+  lr: 1e-4
+  epochs: 1
