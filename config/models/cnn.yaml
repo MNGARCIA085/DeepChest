@@ -5,6 +5,6 @@ dense_units: 128
 dropout: 0.5
 activation: relu
 kernel_initializer: he_normal
-weight_decay: 1e-4
+weight_decay: 1e-4 # more of a training thing
 bn_momentum: 0.9
 bn_epsilon: 1e-5

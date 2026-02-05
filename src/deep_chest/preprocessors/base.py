@@ -96,6 +96,28 @@ class DataModule:
         return x
 
     # ---------- logging / experiment tracking ----------
+    
+
+    def get_artifacts(self):
+        base = {
+            "image_size": self.image_size,
+            "batch_size": self.batch_size,
+            "num_labels": len(self.labels),
+            "labels": self.labels,
+            "preprocessing": (
+                "rescale_1_255" if self.preprocess_fn is None
+                else self.preprocess_fn.__name__
+            ),
+            "seed": self.seed,
+        }
+
+        if hasattr(self, "pos_weights") and self.pos_weights is not None:
+            base["pos_weights"] = self.pos_weights.tolist()
+
+        return base
+
+
+    """
     def get_artifacts(self):
         return {
             "image_size": self.image_size,
@@ -108,6 +130,7 @@ class DataModule:
             ),
             "seed": self.seed,
         }
+    """
 
 
     #-----------------for weighting the loss--------maybe log it later----------
@@ -121,6 +144,7 @@ class DataModule:
 
         print(pos_freq)
         print(neg_freq)
+        # make pos_weights self??????
         return neg_freq / pos_freq, pos_freq, neg_freq
     # check code later!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
@@ -153,5 +177,41 @@ from tensorflow.keras.applications.densenet import preprocess_input
 data = ChestXrayDataModule(
     ...,
     preprocess_fn=preprocess_input,
+)
+"""
+
+
+
+
+
+
+"""
+# Simple CNN
+train_gen = get_generator(
+    df_train,
+    image_dir,
+    x_col,
+    y_cols,
+    preprocess_fn=None
+)
+
+# EfficientNet
+from tensorflow.keras.applications.efficientnet import preprocess_input
+train_gen = get_generator(
+    df_train,
+    image_dir,
+    x_col,
+    y_cols,
+    preprocess_fn=preprocess_input
+)
+
+# DenseNet121
+from tensorflow.keras.applications.densenet import preprocess_input
+train_gen = get_generator(
+    df_train,
+    image_dir,
+    x_col,
+    y_cols,
+    preprocess_fn=preprocess_input
 )
 """

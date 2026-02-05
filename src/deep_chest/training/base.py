@@ -67,12 +67,26 @@ class StandardTrainer(BaseTrainer):
             metrics=self.cfg.metrics,
         )
 
-        self.fit_model(
+        history = self.fit_model(
             train_gen,
             val_gen,
             self.cfg.epochs,
             callbacks,
         )
+
+
+        return {
+                "history": history.history,
+                "hyperparams": {
+                    "lr": self.cfg.lr,
+                    "epochs": self.cfg.epochs,
+                }
+            }
+
+
+
+
+
 
 
 #-----------Transfer Learning trainer-----------------#
@@ -107,16 +121,33 @@ class TransferLearningTrainer(BaseTrainer):
 
     def train(self, train_gen, val_gen, loss, callbacks):
         print('Feature extraction')
-        self._phase1(self.cfg.phase1, train_gen, val_gen, loss, callbacks)
+        h1, lr1, epochs1 = self._phase1(self.cfg.phase1, train_gen, val_gen, loss, callbacks)
         print('Fine tuning')
-        self._phase2(self.cfg.phase2, train_gen, val_gen, loss, callbacks)
+        h2, lr2, epochs2, num_unfrozen = self._phase2(self.cfg.phase2, train_gen, val_gen, loss, callbacks)
+
+
+        return {
+          "phase1": {
+              "history": h1.history,
+              "lr": lr1,
+              "epochs": epochs1,
+          },
+          "phase2": {
+              "history": h2.history,
+              "lr": lr2,
+              "epochs": epochs2,
+              "num_unfrozen": num_unfrozen,
+          },
+          #"backbone": "resnet50"
+        }
+
 
 
     def _phase1(self, phase_cfg, train_gen, val_gen, loss, callbacks):
         
         self.freeze_backbone()
 
-        print_trainable_layers(self.model) # minor test
+        #print_trainable_layers(self.model) # minor test
 
         self.compile_model(
             lr=phase_cfg.lr,
@@ -124,12 +155,14 @@ class TransferLearningTrainer(BaseTrainer):
             metrics=self.cfg.metrics,
         )
 
-        self.fit_model(
+        history = self.fit_model(
             train_gen,
             val_gen,
             phase_cfg.epochs,
             callbacks,
         )
+
+        return history, phase_cfg.lr, phase_cfg.epochs
 
 
 
@@ -137,7 +170,7 @@ class TransferLearningTrainer(BaseTrainer):
         
         self.unfreeze_top_layers(phase_cfg.unfreeze_layers)
 
-        print_trainable_layers(self.model) # minor test
+        #print_trainable_layers(self.model) # minor test
 
         self.compile_model(
             lr=phase_cfg.lr,
@@ -145,12 +178,14 @@ class TransferLearningTrainer(BaseTrainer):
             metrics=self.cfg.metrics,
         )
 
-        self.fit_model(
+        history = self.fit_model(
             train_gen,
             val_gen,
             phase_cfg.epochs,
             callbacks,
         )
+
+        return history, phase_cfg.lr, phase_cfg.epochs, phase_cfg.unfreeze_layers
 
 
     """
@@ -223,3 +258,44 @@ loss:
 
 
 
+
+
+"""
+phase 1
+
+......
+
+
+phase 2->Z FT
+trainer.unfreeze_top_layers(n_layers=30)
+
+change optim with lowe rlr
+trainer.optimizer = tf.keras.optimizers.Adam(1e-5)
+trainer.compile()  # REQUIRED
+
+
+train again
+history_ft = trainer.fit(
+    train_generator,
+    val_generator,
+    epochs=10,
+    steps_per_epoch=100,
+    validation_steps=25
+)
+
+✅ One trainer instance
+✅ Same model instance
+✅ Freeze → recompile → train
+✅ Unfreeze → recompile → train
+✅ No prediction logic in trainer
+
+This is exactly how you’d do it in a real ML system.
+
+6️⃣ Common mistakes (avoid these)
+
+❌ Forgetting to recompile after trainable changes
+❌ Creating a new trainer for fine-tuning
+❌ Freezing inside the model builder
+❌ Mixing inference logic in the trainer
+
+"""

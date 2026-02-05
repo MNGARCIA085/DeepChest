@@ -3,11 +3,11 @@ backbone_name: backbone
 
 phase1:
   lr: 1e-4
-  epochs: 2
+  epochs: 1
 
 phase2:
   lr: 1e-5
-  epochs: 2
+  epochs: 1
   unfreeze_layers: 2
 
 

@@ -9,7 +9,7 @@ defaults:
 
 
 random_state: 42
-exp_name: deep_chest
+experiment_name: deep_chest
 
 
 #run_tuning_name: tuning

@@ -18,7 +18,7 @@ class CNNConfig:
     activation: str = "relu"
 
     kernel_initializer: str = "he_normal"
-    weight_decay: float = 1e-4
+    weight_decay: float = 1e-4 # more of a training thing
 
     bn_momentum: float = 0.9
     bn_epsilon: float = 1e-5
