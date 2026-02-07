@@ -22,7 +22,7 @@ class TrainingConfig:
 
     # -------- standard --------
     lr: Optional[float] = 1e-3
-    epochs: Optional[int] = 1
+    epochs: Optional[int] = 2
 
     # -------- transfer learning --------
     backbone_name: Optional[str] = "backbone"

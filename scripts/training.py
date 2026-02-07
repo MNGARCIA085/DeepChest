@@ -31,7 +31,7 @@ def main(cfg: DictConfig):
     print(f"\nSelected model: {model_type}")
 
 
-    #print(cfg)
+    print(cfg)
 
 
 
@@ -57,16 +57,9 @@ def main(cfg: DictConfig):
         labels=cfg.preprocessor.labels,
         preprocess_fn=prep_fn, # add prep according to model type
     )
-    data.load_data()
-    train_gen = data.train_generator()
-    val_gen = data.val_generator()
 
-    
-
-
-    #----------Calculations required---------------------#
-    _, _, pos_weights = data.compute_pos_weights_from_generator(train_gen)
-    #print(pos_weights)
+    # prepare training
+    data.prepare_training()
 
 
     # for logging
@@ -81,13 +74,10 @@ def main(cfg: DictConfig):
     #print(model.summary())
 
 
-    
-
-
     #----------------Training--------------------------------
 
     # training cfg
-    training_cfg = TrainingConfig(**cfg.model_type.training)
+    training_cfg = TrainingConfig(**cfg.model_type.training) # check replace!!!
     metrics=[
                 tf.keras.metrics.AUC(curve="ROC", multi_label=True, name="auroc"),
                 tf.keras.metrics.AUC(curve="PR", multi_label=True, name="auprc"),
@@ -96,7 +86,7 @@ def main(cfg: DictConfig):
 
 
     # custom loss
-    loss = weighted_bce(pos_weights)
+    loss = weighted_bce(data.pos_weights)
 
     # callbacks
     callbacks = []
@@ -115,7 +105,7 @@ def main(cfg: DictConfig):
     trainer = trainer_cls(model, training_cfg)
     
     # train
-    results = trainer.train(train_gen, val_gen, loss, callbacks)
+    results = trainer.train(data.train_gen, data.val_gen, loss, callbacks)
 
 
     print('results', results)
@@ -128,7 +118,7 @@ def main(cfg: DictConfig):
 
     predictor = Predictor(model)
 
-    probs, y_true = predictor.predict_with_targets(val_gen)
+    probs, y_true = predictor.predict_with_targets(data.val_gen)
     #print(probs) # then i should pass through a threshold
     #print(y_true)
 
@@ -141,14 +131,14 @@ def main(cfg: DictConfig):
     evaluator = Evaluator(0.5, cfg.preprocessor.labels)
 
     metrics = evaluator.evaluate(y_true, probs)
-    print(metrics)
+    #print(metrics)
 
 
 
     #----------------Logging---------------------#
 
     results['metrics'] = metrics
-    print(results['metrics'])
+    #print(results['metrics'])
 
     logging('training', artifacts, results, model_type, 'train')
 

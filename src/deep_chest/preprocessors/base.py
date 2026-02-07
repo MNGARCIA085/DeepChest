@@ -37,8 +37,18 @@ class DataModule:
         self.test_df = None
 
 
+        self.train_gen = None # light; ImageDataGenerator.flow_from_dataframe does not load images into memory.
+        self.val_gen = None
+        self.test_gen = None
+        self.pos_weights = None
+        self.pos_freq = None
+        self.neg_freq = None
 
-    # ---------- data loading ----------
+
+
+
+
+    # ---------- Data loading ----------#
     def load_data(self):
         self.train_df = pd.read_csv(self.train_csv)
         self.val_df = pd.read_csv(self.val_csv)
@@ -46,7 +56,9 @@ class DataModule:
 
         return self.train_df, self.val_df, self.test_df
 
-    # ---------- generators ----------
+
+
+    # ---------- Generators ----------
     def _make_image_generator(self, shuffle):
         if self.preprocess_fn is None:
             return ImageDataGenerator(rescale=1.0 / 255)
@@ -82,7 +94,8 @@ class DataModule:
             raise RuntimeError("Call load_data() first")
         return self._flow(self.test_df, shuffle=False)
 
-    # ---------- single-image preprocessing (inference) ----------
+    
+    # ---------- Single-image preprocessing (inference) ----------
     def preprocess_image(self, image_path):
         img = load_img(image_path, target_size=self.image_size)
         x = img_to_array(img)
@@ -95,9 +108,7 @@ class DataModule:
 
         return x
 
-    # ---------- logging / experiment tracking ----------
-    
-
+    # ---------- Logging / experiment tracking ----------
     def get_artifacts(self):
         base = {
             "image_size": self.image_size,
@@ -112,28 +123,13 @@ class DataModule:
         }
 
         if hasattr(self, "pos_weights") and self.pos_weights is not None:
-            base["pos_weights"] = self.pos_weights.tolist()
+            base["pos_weights"] = self.pos_weights
 
         return base
 
 
-    """
-    def get_artifacts(self):
-        return {
-            "image_size": self.image_size,
-            "batch_size": self.batch_size,
-            "num_labels": len(self.labels),
-            "labels": self.labels,
-            "preprocessing": (
-                "rescale_1_255" if self.preprocess_fn is None
-                else self.preprocess_fn.__name__
-            ),
-            "seed": self.seed,
-        }
-    """
 
-
-    #-----------------for weighting the loss--------maybe log it later----------
+    #-----------------for weighting the loss------------------
     @staticmethod
     def compute_pos_weights_from_generator(gen):
         labels = gen.labels
@@ -142,11 +138,61 @@ class DataModule:
         pos_freq = labels.sum(axis=0) / N
         neg_freq = 1 - pos_freq
 
-        print(pos_freq)
-        print(neg_freq)
-        # make pos_weights self??????
-        return neg_freq / pos_freq, pos_freq, neg_freq
-    # check code later!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+
+        pw = neg_freq / pos_freq
+        return pw, pos_freq, neg_freq
+    # check calculations later!!!!
+
+    
+
+    # 
+    def prepare_training(self):
+        self.load_data()
+
+        self.train_gen = self.train_generator()
+        self.val_gen = self.val_generator()
+
+        # computed with train data
+        pw, pos_f, neg_f = self.compute_pos_weights_from_generator(self.train_gen)
+
+
+        self.pos_weights = pw
+        self.pos_freq = pos_f
+        self.neg_freq = neg_f
+
+
+
+
+
+
+
+
+
+
+
+
+"""
+celaner option for later
+Instead of prepare_training, many projects use:
+
+setup(stage="train")
+
+build()
+
+initialize()
+
+Example:
+
+data.setup("train")
+
+
+Later you could do:
+
+data.setup("inference")
+
+
+and skip weights.
+"""
 
 
 

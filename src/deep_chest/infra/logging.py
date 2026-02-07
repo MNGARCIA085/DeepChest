@@ -9,6 +9,19 @@ from dataclasses import is_dataclass, asdict
 from hydra.core.hydra_config import HydraConfig
 
 
+"""
+from hydra.core.hydra_config import HydraConfig
+import os
+
+out_dir = HydraConfig.get().runtime.output_dir
+plot_path = os.path.join(out_dir, "roc.png")
+
+plt.savefig(plot_path)
+mlflow.log_artifact(plot_path)
+"""
+
+
+
 # tags
 def log_tags(stage, model_type, dataset, extra_tags=None):
 
@@ -28,12 +41,33 @@ def log_tags(stage, model_type, dataset, extra_tags=None):
 
 # comon params
 def log_common_params(artifacts):
-    #mlflow.log_param("val_size", artifacts["val_size"])
-    #mlflow.log_param("train_shape", artifacts["train_shape"])
-    #mlflow.log_param("val_shape", artifacts["val_shape"])
     mlflow.log_param("image_size", artifacts["image_size"])
-    # labels as dict? mlflow.log_dict({"features": artifacts["features"]}, "features.json")
-    # pos_weights?????
+    mlflow.log_param("num_labels", artifacts["num_labels"])
+    mlflow.log_param("preprocessing", artifacts["preprocessing"])
+    mlflow.log_param("seed", artifacts["seed"])
+
+    # labels artifact
+    mlflow.log_dict(
+        {"labels": artifacts["labels"]},
+        "labels.json"
+    )
+
+    # labels
+    """
+    out_dir = HydraConfig.get().runtime.output_dir
+    filename = "labels.json"
+    path = os.path.join(out_dir, filename)
+    mlflow.log_dict({"labels": artifacts["labels"]}, path)
+    """
+
+    # pos weigths
+    pos_weights_np = np.array(artifacts['pos_weights'])
+
+    mlflow.log_dict(
+        {"pos_weights": pos_weights_np.tolist()},
+        "pos_weights.json"
+    )
+
 
 
 
@@ -91,7 +125,12 @@ def log_training_results(results):
         #log_final_metrics(results['history'])
         #log_history(results["history"])
 
+
+
+        log_loss_plot(results['history'])
+
     else:  # Transfer learning
+
         for phase, data in results.items():
             log_hyperparams(
                 {k: v for k, v in data.items() if k != "history"},
@@ -100,6 +139,45 @@ def log_training_results(results):
             #log_final_metrics(data["history"], prefix=f"{phase}_")
             #log_history(data["history"], prefix=f"{phase}_")
 
+            print('sdfdsfdsdsfdsdsf')
+            print(phase)
+            print(data)
+            print(type(phase))
+            print(type(data))
+
+            print(data.items())
+            print(type(data.items()))
+
+
+            # histories
+            for subphase, subdata in data.items():
+                if "history" in subdata:
+
+                    log_loss_plot(subdata['history'])
+                    """
+                    log_final_metrics(
+                        subdata["history"],
+                        prefix=f"{phase}_{subphase}_"
+                    )
+                    """
+
+            print(phase)
+
+            print("-------------------------------\n--------------------")
+            print(data)
+            log_loss_plot(data['history'])
+
+            # phase1['history']
+
+
+
+"""
+better for hydra
+for phase, phase_data in results.items():
+    for key, value in phase_data.items():
+        if isinstance(value, dict) and "history" in value:
+            log_final_metrics(value["history"], prefix=f"{phase}_{key}_")
+"""
 
 
 
@@ -161,6 +239,49 @@ def log_metric_means(metrics, prefix=""):
 
 
 #-----------------------------------------------#
+import os
+import matplotlib.pyplot as plt
+from hydra.core.hydra_config import HydraConfig
+
+
+
+def log_loss_plot(history, filename="loss.png"):
+
+
+    print(history)
+
+    # 1. Get hydra output dir (unique per run)
+    out_dir = HydraConfig.get().runtime.output_dir
+    path = os.path.join(out_dir, filename)
+
+    # 2. Extract history safely
+    train_loss = history.get("loss", [])
+    val_loss = history.get("val_loss", [])
+
+    # 3. Plot
+    plt.figure()
+    plt.plot(train_loss, label="train_loss")
+    if val_loss:
+        plt.plot(val_loss, label="val_loss")
+    plt.xlabel("Epoch")
+    plt.ylabel("Loss")
+    plt.legend()
+    plt.title("Training Loss")
+
+    # 4. Save locally (hydra safe)
+    plt.savefig(path, bbox_inches="tight")
+    plt.close()
+
+    # 5. Log to MLflow
+    mlflow.log_artifact(path)
+
+
+
+
+
+#------------------------------------------------#
+
+
 
 
 
@@ -171,11 +292,20 @@ def logging(run_name, artifacts, results, model_type, stage):
     with mlflow.start_run(run_name=run_name):
         log_tags(stage, model_type, "train/val")
         """
-        log_common_params(artifacts)
+        
         log_metrics(results)
         log_hyperparams(results['hyperparams'])
         """
         #log_per_class_metrics(results['metrics'])
+
+
+        # check mutability
+
+        log_training_results(results)
+
+
+        # prep. artifacts
+        log_common_params(artifacts)
 
         df = build_per_class_df(results['metrics'])
         log_per_class_df(df) # later pus class name instead of class_id
@@ -183,7 +313,15 @@ def logging(run_name, artifacts, results, model_type, stage):
         # log metrics aggregate
         log_metric_means(results['metrics'])
 
-        log_training_results(results)
+        
+
+
+
+
+
+
+
+
 
 
 
