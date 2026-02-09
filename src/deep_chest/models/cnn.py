@@ -1,7 +1,5 @@
 import tensorflow as tf
-from tensorflow.keras import layers, models
-
-
+from tensorflow.keras import layers, models,regularizers
 from dataclasses import dataclass
 
 
@@ -18,7 +16,7 @@ class CNNConfig:
     activation: str = "relu"
 
     kernel_initializer: str = "he_normal"
-    weight_decay: float = 1e-4 # more of a training thing
+    weight_decay: float = 1e-4
 
     bn_momentum: float = 0.9
     bn_epsilon: float = 1e-5
@@ -27,12 +25,8 @@ class CNNConfig:
 
 
 
-
-
-from tensorflow.keras import layers, models, regularizers
-
+# build cnn
 def build_cnn(cfg: CNNConfig):
-
     reg = regularizers.l2(cfg.weight_decay)
 
     inputs = layers.Input(shape=cfg.input_shape)

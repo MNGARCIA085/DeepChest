@@ -140,7 +140,7 @@ def main(cfg: DictConfig):
     results['metrics'] = metrics
     #print(results['metrics'])
 
-    logging('training', artifacts, results, model_type, 'train')
+    logging('training', artifacts, results, model, model_cfg, model_type, 'train')
 
 
 
