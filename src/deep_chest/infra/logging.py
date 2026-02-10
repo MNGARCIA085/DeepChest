@@ -241,7 +241,10 @@ def log_transfer_loss_plot(results, filename="combined_loss.png"):
 #-------------------Main code-------------------------------#
 def logging(run_name, artifacts, results, model, model_cfg, model_type, stage):
     with mlflow.start_run(run_name=run_name):
-        
+
+        # RUN_ID
+        run_id = mlflow.active_run().info.run_id
+
         # tags
         log_tags(stage, model_type, "train/val")
 
@@ -267,42 +270,65 @@ def logging(run_name, artifacts, results, model, model_cfg, model_type, stage):
         # metrics aggregation
         log_metric_means(results['metrics'])
 
+
+        print(results)
+
+        #----------------------------------------------------#
+
+        # for now keep it simple; last auprc
+        from deep_chest.infra.utils import update_leaderboard
+
+
+        # is differnet for TL!!!!!! (if history in results.....)
+        if 'history' in results:
+            score = results['history']['val_auprc'][-1]
+        else: #TL
+            score = results['phase2']['history']['val_auprc'][-1]
+        
+        # update leaderboard
+        info = update_leaderboard(run_id, score)
+
+        if info["is_top_k"]:
+            log_keras_model(model)
+            mlflow.set_tag("top_k_rank", info["rank"])
+            mlflow.set_tag("in_top_k", "true")
+        else:
+            mlflow.set_tag("in_top_k", "false")
+
+        
+        #for rid in info["removed_run_ids"]:
+        #    delete_model_artifacts(rid)
+        #mlflow.log_artifact("mlflow_leaderboard.json") correct path
+
+
+
         
 
 
-        
 
+from hydra.core.hydra_config import HydraConfig
+from pathlib import Path
+import mlflow
 
+def log_keras_model(model, filename="model.keras"):
+    # Hydra unique output dir
+    out_dir = Path(HydraConfig.get().runtime.output_dir)
+    model_path = out_dir / filename
 
+    # 1. Save locally (.keras format)
+    model.save(model_path) #keras_model_kwargs={"include_optimizer": False}
 
+    # 2. Log to MLflow under "model" folder
+    mlflow.log_artifact(str(model_path), artifact_path="model")
 
-"""
-
-
-
-
-{'phase1': {'history': {'auprc': [0.05389304831624031], 'auroc': [0.5418590903282166], 'loss': [1.6506065130233765], 'val_auprc': [0.0867825299501419], 'val_auroc': [0.6071411967277527], 'val_loss': [1.3783063888549805]}, 'lr': 0.0001, 'epochs': 1}, 'phase2': {'history': {'auprc': [0.056598179042339325], 'auroc': [0.5636993646621704], 'loss': [1.602590560913086], 'val_auprc': [0.08525221049785614], 'val_auroc': [0.651050865650177], 'val_loss': [1.3812135457992554]}, 'lr': 1e-05, 'epochs': 1, 'num_unfrozen': 2}, 'metrics': {'accuracy': array([0.54 , 0.82 , 0.735, 0.925, 0.53 , 0.3  , 0.35 , 0.33 , 0.745,
-       0.605, 0.71 , 0.835, 0.63 , 0.485]), 'recall': array([0.25      , 0.66666667, 0.51851852, 0.        , 0.62068966,
-       0.88888889, 0.63636364, 0.94736842, 0.5       , 0.66666667,
-       1.        , 1.        , 0.5       , 0.71428571]), 'sepcificity': array([0.54591837, 0.82233503, 0.76878613, 0.92964824, 0.51461988,
-       0.27225131, 0.33333333, 0.26519337, 0.75789474, 0.60309278,
-       0.70854271, 0.83417085, 0.63131313, 0.47668394]), 'f1': array([0.0212766 , 0.1       , 0.34567901, 0.        , 0.27692308,
-       0.1025641 , 0.09722222, 0.21176471, 0.16393443, 0.09195402,
-       0.03333333, 0.05714286, 0.02631579, 0.08849558]), 'prevalence': array([0.02 , 0.015, 0.135, 0.005, 0.145, 0.045, 0.055, 0.095, 0.05 ,
-       0.03 , 0.005, 0.005, 0.01 , 0.035]), 'ppv_per_class': array([0.01111111, 0.05405405, 0.25925926, 0.        , 0.17821782,
-       0.05442177, 0.05263158, 0.1192053 , 0.09803922, 0.04938272,
-       0.01694915, 0.02941176, 0.01351351, 0.04716981]), 'npv_per_class': array([0.97272727, 0.99386503, 0.9109589 , 0.99462366, 0.88888889,
-       0.98113208, 0.94029851, 0.97959184, 0.96644295, 0.98319328,
-       1.        , 1.        , 0.99206349, 0.9787234 ]), 'auc': array([0.45153061, 0.72081218, 0.71397988, 0.32663317, 0.60092761,
-       0.65212333, 0.4968735 , 0.67199767, 0.65736842, 0.65034364,
-       0.94974874, 0.97487437, 0.7020202 , 0.63582531])}}
-"""
-
+    return str(model_path)
 
 
 
 
         
+
+
 
 """
 def log_history(history: dict, prefix=""):

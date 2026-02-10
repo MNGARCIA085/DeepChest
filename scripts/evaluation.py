@@ -21,6 +21,16 @@ import numpy as np
 
 @hydra.main(config_path="../config", config_name="config", version_base=None)
 def main(cfg: DictConfig):
+
+
+
+
+
+    # mdoel type for prep!!!!!!!!!!!!!!!!!!!
+
+
+
+
     # get model type (nn, tree.....)
     model_type = cfg.model_type
     print(f"\nSelected model: {model_type}")
@@ -29,8 +39,8 @@ def main(cfg: DictConfig):
     print(cfg)
 
     # params for training; not really i can use cfg.training given how i execute the script
-    cfg_model = OmegaConf.load(f"config/models/{model_type}.yaml") # NOT use this!!!!
-    print(cfg_model)
+    #cfg_model = OmegaConf.load(f"config/models/{model_type}.yaml") # NOT use this!!!!
+    #print(cfg_model)
 
 
     # paths
@@ -65,11 +75,37 @@ def main(cfg: DictConfig):
     
 
     # load model
+    """
     model = keras.models.load_model(
         "test_model.keras",
         compile=False, 
         custom_objects={"SimpleCNN": SimpleCNN},
     )
+    """
+
+
+    from deep_chest.infra.utils import load_leaderboard, update_leaderboard, get_best_run_id, get_top_k_run_ids
+
+
+    # load model
+    a = get_best_run_id()
+    print(a)
+
+    b = get_top_k_run_ids(k=2)
+    print(b)
+
+
+    from deep_chest.infra.tracking import download_best_model, download_all_artifacts
+    
+
+
+    arts = download_all_artifacts(a)
+    print(arts)
+
+    from keras.models import load_model
+    
+    model = load_model(f"{arts}/model/model.keras", compile=False)
+    print(model.summary())
 
     print(model)
 
@@ -109,7 +145,7 @@ def main(cfg: DictConfig):
     #ci = evaluator.bootstrap_auc(y_true, y_preds_proba)
     #print(ci)
 
-    plot = evaluator.plot_calibration_curve(y_true, y_preds_proba)
+    #plot = evaluator.plot_calibration_curve(y_true, y_preds_proba)
 
 
 

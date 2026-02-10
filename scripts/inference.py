@@ -18,16 +18,23 @@ from deep_chest.inference.base import Predictor
 
 @hydra.main(config_path="../config", config_name="config", version_base=None)
 def main(cfg: DictConfig):
+
+
+
+    # mdoel type for prep!!!!!!!!!!!!!!!!!!!
+
+
+    
     # get model type (nn, tree.....)
     model_type = cfg.model_type
     print(f"\nSelected model: {model_type}")
 
 
-    print(cfg)
+    #print(cfg)
 
     # params for training; not really i can use cfg.training given how i execute the script
-    cfg_model = OmegaConf.load(f"config/models/{model_type}.yaml") # NOT use this!!!!
-    print(cfg_model)
+    #cfg_model = OmegaConf.load(f"config/models/{model_type}.yaml") # NOT use this!!!!
+    #print(cfg_model)
 
 
     # paths
@@ -61,7 +68,35 @@ def main(cfg: DictConfig):
 
     
 
+    #--------------Model---------------------------------------------
+    from deep_chest.infra.utils import load_leaderboard, update_leaderboard, get_best_run_id, get_top_k_run_ids
+
+
     # load model
+    a = get_best_run_id()
+    print(a)
+
+    b = get_top_k_run_ids(k=2)
+    print(b)
+
+
+    from deep_chest.infra.tracking import download_best_model, download_all_artifacts
+    
+
+
+    arts = download_all_artifacts(a)
+    print(arts)
+
+    from keras.models import load_model
+    
+    model = load_model(f"{arts}/model/model.keras", compile=False)
+    print(model.summary())
+
+
+
+
+
+    """"
     model = keras.models.load_model(
         "test_model.keras",
         compile=False, #if i dont pass loss; good for quick test; i can do this since i dont need it for inference
@@ -71,7 +106,7 @@ def main(cfg: DictConfig):
     )
 
     print(model)
-
+    """
 
 
     #--------------------preds test--------------------------------
