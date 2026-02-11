@@ -58,7 +58,7 @@ class DataModule:
 
 
 
-    # ---------- Generators ----------
+    # ---------- Generators -----------------------#
     def _make_image_generator(self, shuffle):
         if self.preprocess_fn is None:
             return ImageDataGenerator(rescale=1.0 / 255)
@@ -95,7 +95,7 @@ class DataModule:
         return self._flow(self.test_df, shuffle=False)
 
     
-    # ---------- Single-image preprocessing (inference) ----------
+    # ---------- Single-image preprocessing (inference) ----------#
     def preprocess_image(self, image_path):
         img = load_img(image_path, target_size=self.image_size)
         x = img_to_array(img)
@@ -108,7 +108,38 @@ class DataModule:
 
         return x
 
-    # ---------- Logging / experiment tracking ----------
+
+    #-----------------For weighting the loss------------------#
+    @staticmethod
+    def compute_pos_weights_from_generator(gen):
+        labels = gen.labels
+        N = labels.shape[0]
+
+        pos_freq = labels.sum(axis=0) / N
+        neg_freq = 1 - pos_freq
+
+
+        pw = neg_freq / pos_freq
+        return pw, pos_freq, neg_freq
+
+
+    #----------------Prepare training---------------------------# 
+    def prepare_training(self):
+        self.load_data()
+
+        self.train_gen = self.train_generator()
+        self.val_gen = self.val_generator()
+
+        # computed with train data
+        pw, pos_f, neg_f = self.compute_pos_weights_from_generator(self.train_gen)
+
+
+        self.pos_weights = pw
+        self.pos_freq = pos_f
+        self.neg_freq = neg_f
+
+
+    # ---------- Logging / experiment tracking ------------------#
     def get_artifacts(self):
         base = {
             "image_size": self.image_size,
@@ -126,39 +157,6 @@ class DataModule:
             base["pos_weights"] = self.pos_weights
 
         return base
-
-
-
-    #-----------------for weighting the loss------------------
-    @staticmethod
-    def compute_pos_weights_from_generator(gen):
-        labels = gen.labels
-        N = labels.shape[0]
-
-        pos_freq = labels.sum(axis=0) / N
-        neg_freq = 1 - pos_freq
-
-
-        pw = neg_freq / pos_freq
-        return pw, pos_freq, neg_freq
-    # check calculations later!!!!
-
-    
-
-    # 
-    def prepare_training(self):
-        self.load_data()
-
-        self.train_gen = self.train_generator()
-        self.val_gen = self.val_generator()
-
-        # computed with train data
-        pw, pos_f, neg_f = self.compute_pos_weights_from_generator(self.train_gen)
-
-
-        self.pos_weights = pw
-        self.pos_freq = pos_f
-        self.neg_freq = neg_f
 
 
 
@@ -192,72 +190,4 @@ data.setup("inference")
 
 
 and skip weights.
-"""
-
-
-
-
-"""
-
-data = ChestXrayDataModule(
-    train_csv=TRAIN_PATH,
-    val_csv=VALID_PATH,
-    test_csv=TEST_PATH,
-    image_dir=IMAGE_DIR,
-    labels=labels,
-    preprocess_fn=None,
-)
-data.load_data()
-train_gen = data.train_generator()
-
-
-from tensorflow.keras.applications.efficientnet import preprocess_input
-
-data = ChestXrayDataModule(
-    ...,
-    preprocess_fn=preprocess_input,
-)
-
-from tensorflow.keras.applications.densenet import preprocess_input
-
-data = ChestXrayDataModule(
-    ...,
-    preprocess_fn=preprocess_input,
-)
-"""
-
-
-
-
-
-
-"""
-# Simple CNN
-train_gen = get_generator(
-    df_train,
-    image_dir,
-    x_col,
-    y_cols,
-    preprocess_fn=None
-)
-
-# EfficientNet
-from tensorflow.keras.applications.efficientnet import preprocess_input
-train_gen = get_generator(
-    df_train,
-    image_dir,
-    x_col,
-    y_cols,
-    preprocess_fn=preprocess_input
-)
-
-# DenseNet121
-from tensorflow.keras.applications.densenet import preprocess_input
-train_gen = get_generator(
-    df_train,
-    image_dir,
-    x_col,
-    y_cols,
-    preprocess_fn=preprocess_input
-)
 """

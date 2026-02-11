@@ -2,12 +2,14 @@ from pathlib import Path
 import json
 
 
-
+# later in conf -> paths!!!!!
 PROJECT_ROOT = Path(__file__).resolve().parents[3]
 TRACKING_DIR = PROJECT_ROOT / "tracking"
 LEADERBOARD_PATH = TRACKING_DIR / "leaderboard.json"
 
 
+
+#------------------------Leaderboard-----------------------------#
 
 def load_leaderboard(top_k=2, metric="val_auprc_mean"):
 
@@ -27,12 +29,12 @@ def load_leaderboard(top_k=2, metric="val_auprc_mean"):
     return json.loads(LEADERBOARD_PATH.read_text())
 
 
-# see later if i use it
+
 def save_leaderboard(board):
     LEADERBOARD_PATH.write_text(json.dumps(board, indent=2))
 
 
-# update leaderboard
+
 def update_leaderboard(run_id: str, score: float):
     board = load_leaderboard()
 
@@ -81,13 +83,12 @@ def update_leaderboard(run_id: str, score: float):
 
 
 
-#---------------Get best run ids--------------------------#
+# get best run ids
 def get_best_run_id():
     lb = load_leaderboard()
     if not lb or not lb["runs"]:
         return None
     return lb["runs"][0]["run_id"]
-
 
 
 def get_top_k_run_ids(k=None):
@@ -98,3 +99,7 @@ def get_top_k_run_ids(k=None):
     if k:
         runs = runs[:k]
     return [r["run_id"] for r in runs]
+
+
+
+

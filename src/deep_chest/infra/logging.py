@@ -7,6 +7,8 @@ import pandas as pd
 import numpy as np
 from dataclasses import is_dataclass, asdict
 from hydra.core.hydra_config import HydraConfig
+from pathlib import Path
+from deep_chest.infra.utils import update_leaderboard
 
 
 
@@ -236,6 +238,24 @@ def log_transfer_loss_plot(results, filename="combined_loss.png"):
 
 
 
+#-------------Log Keras model-------------------#
+def log_keras_model(model, filename="model.keras"):
+    """
+        I can't use directly mlflow's log_model in this case
+    """
+    # Hydra unique output dir
+    out_dir = Path(HydraConfig.get().runtime.output_dir)
+    model_path = out_dir / filename
+
+    # 1. Save locally (.keras format)
+    model.save(model_path) #keras_model_kwargs={"include_optimizer": False}
+
+    # 2. Log to MLflow under "model" folder
+    mlflow.log_artifact(str(model_path), artifact_path="model")
+
+    return str(model_path)
+
+
 
 
 #-------------------Main code-------------------------------#
@@ -275,11 +295,11 @@ def logging(run_name, artifacts, results, model, model_cfg, model_type, stage):
 
         #----------------------------------------------------#
 
-        # for now keep it simple; last auprc
-        from deep_chest.infra.utils import update_leaderboard
+        # for now keep it simple; last auprc; later use checkpoint appropiately
+        
 
 
-        # is differnet for TL!!!!!! (if history in results.....)
+        # is differnet for TL
         if 'history' in results:
             score = results['history']['val_auprc'][-1]
         else: #TL
@@ -295,6 +315,9 @@ def logging(run_name, artifacts, results, model, model_cfg, model_type, stage):
         else:
             mlflow.set_tag("in_top_k", "false")
 
+
+        # log leaderboard!!!!!!
+
         
         #for rid in info["removed_run_ids"]:
         #    delete_model_artifacts(rid)
@@ -306,22 +329,9 @@ def logging(run_name, artifacts, results, model, model_cfg, model_type, stage):
 
 
 
-from hydra.core.hydra_config import HydraConfig
-from pathlib import Path
-import mlflow
 
-def log_keras_model(model, filename="model.keras"):
-    # Hydra unique output dir
-    out_dir = Path(HydraConfig.get().runtime.output_dir)
-    model_path = out_dir / filename
 
-    # 1. Save locally (.keras format)
-    model.save(model_path) #keras_model_kwargs={"include_optimizer": False}
 
-    # 2. Log to MLflow under "model" folder
-    mlflow.log_artifact(str(model_path), artifact_path="model")
-
-    return str(model_path)
 
 
 

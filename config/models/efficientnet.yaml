@@ -1,0 +1,8 @@
+input_shape: [320, 320, 3]
+num_classes: 14
+train_backbone: False
+dense_units: 256
+dropout: 0.5
+backbone_key: efficientnet_b0
+backbone_variant: B0 
+backbone_name: backbone
