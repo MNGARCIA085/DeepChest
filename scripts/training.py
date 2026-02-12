@@ -19,6 +19,14 @@ from deep_chest.infra.logging import logging
 
 
 
+
+
+
+
+
+
+
+
 @hydra.main(config_path="../config", config_name="config", version_base=None)
 def main(cfg: DictConfig):
 
@@ -130,15 +138,16 @@ def main(cfg: DictConfig):
 
     evaluator = Evaluator(0.5, cfg.preprocessor.labels)
 
-    metrics = evaluator.evaluate(y_true, probs)
+    per_class_metrics, agg_metrics = evaluator.evaluate(y_true, probs)
     #print(metrics)
 
 
 
     #----------------Logging---------------------#
 
-    results['metrics'] = metrics
-    #print(results['metrics'])
+    results['metrics'] = per_class_metrics
+    results['agg_metrics'] = agg_metrics
+
 
     logging('training', artifacts, results, model, model_cfg, model_type, 'train')
 

@@ -16,7 +16,7 @@ from deep_chest.inference.base import Predictor
 def main(cfg: DictConfig):
 
     
-    #-----------------Load model and artifacts from MLFlow------------------#
+    # 1. Load model and artifacts from MLFlow
 
     # best run_id
     a = get_best_run_id()
@@ -35,13 +35,11 @@ def main(cfg: DictConfig):
     labels = data.labels['labels']
 
 
-    #-------------------Load data (test dataset)----------------------------#
+    # 2. Data class
     
     # paths
     DATA_ROOT = get_data_root()
     IMAGE_DIR = DATA_ROOT/ cfg.preprocessor.image_dir
-    TRAIN_PATH = DATA_ROOT/ cfg.preprocessor.train_path
-    VALID_PATH = DATA_ROOT/ cfg.preprocessor.valid_path
     TEST_PATH = DATA_ROOT/ cfg.preprocessor.test_path
 
     # appropiate prep. fn.
@@ -49,28 +47,22 @@ def main(cfg: DictConfig):
 
     # test generator
     data = DataModule(
-        train_csv=TRAIN_PATH,
-        val_csv=VALID_PATH,
         test_csv=TEST_PATH,
         image_dir=IMAGE_DIR,
         labels=cfg.preprocessor.labels,
         preprocess_fn=prep_fn,
     )
-    data.load_data()
-    test_gen = data.test_generator()
-    # do i need pos weights??????
 
+    data.load_test_data()
+    test_gen = data.test_generator()
     print(test_gen)
 
 
-    
-
-
-    #--------------------Preds------------------------------#
-    
+    # 3. Predictions (test generator)
     print('-------Preds with test set------------------')
 
     predictor = Predictor(model)
+
 
     logits = predictor.predict_logits(test_gen)
     print(logits[:3])
@@ -83,19 +75,17 @@ def main(cfg: DictConfig):
     print(probs) # then i should pass through a threshold
     print(y_true)
 
-    print('\n')
+    print('\n') 
+   
 
-
-
-    # ------------ Only one pred ------------#
-    
+    # 4. Predictions (1 samnple)
     print('----------Pred with only 1 sample-------------')
 
-    print(data.train_df.iloc[0].Image)
+    print(data.test_df.iloc[0].Image)
 
     # path
-    one_path = TRAIN_PATH / data.train_df.iloc[0].Image
-    one_path = "/home/marcos/Escritorio/AI-prod/DeepChest/data/nih/images-small/" + str(data.train_df.iloc[0].Image)
+    one_path = TEST_PATH / data.test_df.iloc[0].Image
+    one_path = "/home/marcos/Escritorio/AI-prod/DeepChest/data/nih/images-small/" + str(data.test_df.iloc[0].Image)
 
     # preprocess
     x = data.preprocess_image(one_path)

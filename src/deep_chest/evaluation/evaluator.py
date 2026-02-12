@@ -22,7 +22,6 @@ class Evaluator:
         return (y_true == y_hat).mean(axis=0)
 
 
-
     def recall_per_class(self, y_true, y_hat):        
         return recall_score(
             y_true,
@@ -89,6 +88,10 @@ class Evaluator:
 
 
     # useful for logging
+
+
+
+    """
     def precision_recall_curve(self, y_true, y_pred_proba):
         plt.figure(figsize=(7, 7))
 
@@ -111,6 +114,32 @@ class Evaluator:
         plt.legend(loc="lower left", fontsize="small")
         plt.grid(True)
         plt.show()
+    """
+
+
+    def get_precision_recall_curves(self, y_true, y_pred_proba):
+        curves = {}
+
+        for c, name in enumerate(self.labels):
+            precision, recall, _ = precision_recall_curve(
+                y_true[:, c],
+                y_pred_proba[:, c]
+            )
+
+            ap = average_precision_score(
+                y_true[:, c],
+                y_pred_proba[:, c]
+            )
+
+            curves[name] = {
+                "precision": precision,
+                "recall": recall,
+                "ap": float(ap)
+            }
+
+        return curves
+
+
 
 
 
@@ -126,15 +155,12 @@ class Evaluator:
 
 
     # main eval fn.
-    def evaluate(self, y_true, y_pred_proba):
-        y_hat = (y_pred_proba >= self.threshold).astype(int)
-        
-        
+    def evaluate(self, y_true, y_pred_proba):        
         # Calculate thresholded labels ONCE
         y_hat = (y_pred_proba >= self.threshold).astype(int)
         
         # results
-        results = {
+        per_class_metrics = {
             "accuracy": self.accuracy_per_class(y_true, y_hat),
             "recall": self.recall_per_class(y_true, y_hat),
             "sepcificity": self.specificity_per_class(y_true, y_hat),
@@ -144,7 +170,40 @@ class Evaluator:
             "npv_per_class": self.npv_per_class(y_true, y_hat),
             "auc": self.auc_per_class(y_true, y_pred_proba) # Uses raw probs
         }
-        return results
+
+        aggregate_metrics = self.aggregate_metrics(per_class_metrics)
+
+        return per_class_metrics, aggregate_metrics
+
+
+    # to calculate aggregate metrics
+    def aggregate_metrics(self, results):
+        agg = {}
+        prevalence = np.array(results["prevalence"])
+
+        for k, arr in results.items():
+            arr = np.array(arr)
+
+            if k == "prevalence":
+                agg[f"{k}_mean"] = arr.mean()
+                continue
+
+            agg[f"{k}_macro"] = arr.mean()
+            agg[f"{k}_std"] = arr.std()
+            agg[f"{k}_weighted"] = np.average(arr, weights=prevalence)
+
+        return agg
+    # understand well this!!!!!
+
+
+    # include auprc...............
+
+
+
+
+
+
+
 
 
     #------------Confidence intervales---------------------#

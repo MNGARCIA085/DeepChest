@@ -143,12 +143,30 @@ def log_per_class_df(df, filename="per_class_metrics.csv"):
     mlflow.log_artifact(path)
 
 
+
+
+
+
+# -------CHANEG, NOT CALCULATIONS HERE
 def log_metric_means(metrics, prefix=""):
     for name, arr in metrics.items():
         mlflow.log_metric(
             f"{prefix}_{name}_mean",
             float(np.mean(arr))
         )
+#-----------
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 
@@ -197,6 +215,11 @@ def log_param_count(model):
 
 
 #-------------------Combined plot for TL------------------------#
+
+
+#-------later change plots location!!!!!
+
+
 def log_transfer_loss_plot(results, filename="combined_loss.png"):
     out_dir = HydraConfig.get().runtime.output_dir
     path = os.path.join(out_dir, filename)
@@ -235,6 +258,45 @@ def log_transfer_loss_plot(results, filename="combined_loss.png"):
     plt.close()
 
     mlflow.log_artifact(path)
+
+
+
+
+#-----------Precision Recall curve-------------#
+def plot_precision_recall(curves, filename='precision_recall_curve.png'):
+    out_dir = HydraConfig.get().runtime.output_dir
+    path = os.path.join(out_dir, filename)
+
+    plt.figure(figsize=(7, 7))
+
+    for class_name, data in curves.items():
+        plt.plot(
+            data["recall"],
+            data["precision"],
+            label=f"{class_name} (AP={data['ap']:.2f})"
+        )
+
+    plt.xlabel("Recall")
+    plt.ylabel("Precision")
+    plt.title("Precision–Recall Curves (Multilabel)")
+    plt.legend(loc="lower left", fontsize="small")
+    plt.grid(True)
+
+    plt.savefig(path)
+    plt.close()
+
+    mlflow.log_artifact(path)
+
+
+
+
+
+
+
+
+
+
+
 
 
 
@@ -288,16 +350,12 @@ def logging(run_name, artifacts, results, model, model_cfg, model_type, stage):
         log_per_class_df(df) # later put class name instead of class_id
 
         # metrics aggregation
-        log_metric_means(results['metrics'])
+        #log_metric_means(results['metrics'])
+        log_aggregate_metrics(results['agg_metrics'])
 
-
-        print(results)
 
         #----------------------------------------------------#
-
         # for now keep it simple; last auprc; later use checkpoint appropiately
-        
-
 
         # is differnet for TL
         if 'history' in results:
@@ -330,6 +388,43 @@ def logging(run_name, artifacts, results, model, model_cfg, model_type, stage):
 
 
 
+#--------------------Log test results--------------------------#
+
+
+
+def log_aggregate_metrics(agg_metrics):
+    for k, v in agg_metrics.items():
+        mlflow.log_metric(k, float(v))
+
+
+
+
+def log_ci(df, filename="ci.csv"): # maybe json later
+    out_dir = HydraConfig.get().runtime.output_dir
+    path = os.path.join(out_dir, filename)
+
+    df.to_csv(path, index=True)
+    mlflow.log_artifact(path)
+
+
+
+
+
+def log_test_results(model_type, per_class_metrics, agg_metrics, curves, ci, stage='test'):
+
+    with mlflow.start_run(run_name="test_evaluation"):
+        log_tags(stage, model_type, "test")
+        df = build_per_class_df(per_class_metrics) # later put class name instead of class_id
+        log_per_class_df(df) 
+
+        # metrics aggregation
+        log_aggregate_metrics(agg_metrics)
+
+        # PR curve
+        plot_precision_recall(curves)
+
+        # CI
+        log_ci(ci)
 
 
 
@@ -340,21 +435,3 @@ def logging(run_name, artifacts, results, model, model_cfg, model_type, stage):
 
 
 
-"""
-def log_history(history: dict, prefix=""):
-    for metric_name, values in history.items():
-        for epoch, v in enumerate(values):
-            mlflow.log_metric(f"{prefix}{metric_name}", v, step=epoch)
-"""
-
-
-
-
-"""
-#------------------Final evaluation (with test set)-----------------------------
-def log_test_results(tuning_run_id, model_type, results, stage='eval'):
-    with mlflow.start_run(run_name="test_evaluation"):
-        log_tags(stage, model_type, "test", {"tuning_run_id": tuning_run_id})
-        log_metrics(results.metrics)
-        log_plots(results, model_type)
-"""

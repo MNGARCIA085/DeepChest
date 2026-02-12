@@ -7,14 +7,18 @@ from tensorflow.keras.preprocessing.image import (
     img_to_array,
 )
 
+
+
+
+
 class DataModule:
     def __init__(
         self,
-        train_csv,
-        val_csv,
-        test_csv,
-        image_dir,
-        labels,
+        train_csv=None,
+        val_csv=None,
+        test_csv=None,
+        image_dir=None,
+        labels=[],
         x_col="Image",
         batch_size=8,
         image_size=(320, 320),
@@ -46,15 +50,17 @@ class DataModule:
 
 
 
-
-
     # ---------- Data loading ----------#
-    def load_data(self):
+    def load_train_data(self):
         self.train_df = pd.read_csv(self.train_csv)
-        self.val_df = pd.read_csv(self.val_csv)
-        self.test_df = pd.read_csv(self.test_csv)
 
-        return self.train_df, self.val_df, self.test_df
+
+    def load_val_data(self):
+        self.val_df = pd.read_csv(self.val_csv)
+
+
+    def load_test_data(self):
+        self.test_df = pd.read_csv(self.test_csv)
 
 
 
@@ -81,17 +87,17 @@ class DataModule:
 
     def train_generator(self):
         if self.train_df is None:
-            raise RuntimeError("Call load_data() first")
+            raise RuntimeError("Call load_train_data() first")
         return self._flow(self.train_df, shuffle=True)
 
     def val_generator(self):
         if self.val_df is None:
-            raise RuntimeError("Call load_data() first")
+            raise RuntimeError("Call load_val_data() first")
         return self._flow(self.val_df, shuffle=False)
 
     def test_generator(self):
         if self.test_df is None:
-            raise RuntimeError("Call load_data() first")
+            raise RuntimeError("Call load_test_data() first")
         return self._flow(self.test_df, shuffle=False)
 
     
@@ -125,7 +131,8 @@ class DataModule:
 
     #----------------Prepare training---------------------------# 
     def prepare_training(self):
-        self.load_data()
+        self.load_train_data()
+        self.load_val_data()
 
         self.train_gen = self.train_generator()
         self.val_gen = self.val_generator()
