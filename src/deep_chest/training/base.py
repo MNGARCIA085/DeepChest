@@ -22,13 +22,13 @@ class TrainingConfig:
 
     # -------- standard --------
     lr: Optional[float] = 1e-3
-    epochs: Optional[int] = 2
+    epochs: Optional[int] = 1 # improve this later; i think i shouildnty pass this and i should pass phase1
 
     # -------- transfer learning --------
     backbone_name: Optional[str] = "backbone"
     phase1: Optional[PhaseConfig] = field(default_factory=PhaseConfig)
     phase2: Optional[PhaseConfig] = field(
-        default_factory=lambda: PhaseConfig(lr=1e-5, epochs=2, unfreeze_layers=1)
+        default_factory=lambda: PhaseConfig(lr=1e-5, epochs=1, unfreeze_layers=1)
     )
 
 

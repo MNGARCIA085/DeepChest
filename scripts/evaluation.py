@@ -45,8 +45,8 @@ def main(cfg: DictConfig):
     # 1. Load model and artifacts from MLFlow
 
     # best run_id
-    a = get_best_run_id()
-    print(a)
+    best_run_id = get_best_run_id()
+    print(best_run_id)
 
     """
     if i want top-k
@@ -54,7 +54,7 @@ def main(cfg: DictConfig):
     print(b)
     """
 
-    data = load_inference_bundle(a)
+    data = load_inference_bundle(best_run_id)
 
     model = data.model
     model_type = data.model_type
@@ -97,29 +97,17 @@ def main(cfg: DictConfig):
     per_class_metrics, aggregate_metrics = evaluator.evaluate(y_true, y_preds_proba)  
 
 
-
-    print(per_class_metrics)
-    print(aggregate_metrics)
-    
-
-    #plot = evaluator.precision_recall_curve(y_true, y_preds_proba)
-
-
+    # for precision-recall curves
     curves = evaluator.get_precision_recall_curves(y_true, y_preds_proba)
-    print(curves)
 
-
-
-
+    # confidence interval
     ci = evaluator.bootstrap_auc(y_true, y_preds_proba)
     print(ci)
 
     #plot = evaluator.plot_calibration_curve(y_true, y_preds_proba)
 
-
-    
-
-    log_test_results(model_type, per_class_metrics, aggregate_metrics, curves, ci)
+    # log test results
+    log_test_results(model_type, per_class_metrics, aggregate_metrics, curves, ci, best_run_id)
 
 
 

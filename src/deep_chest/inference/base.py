@@ -57,23 +57,6 @@ class Predictor:
         return tf.nn.sigmoid(logits).numpy()
 
 
-
-
-
-"""
-predictor = Predictor(model)
-
-# Raw logits
-logits = predictor.predict_logits(test_generator)
-
-# Probabilities (sigmoid)
-probs = predictor.predict_probs(test_generator)
-
-# Probabilities + true labels
-probs, targets = predictor.predict_with_targets(test_generator)
-"""
-
-
 """
 better version
 def predict_with_targets(self, generator, steps=None):

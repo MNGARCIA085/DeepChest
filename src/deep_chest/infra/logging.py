@@ -5,11 +5,14 @@ import json
 import matplotlib.pyplot as plt
 import pandas as pd
 import numpy as np
+import shutil
 from dataclasses import is_dataclass, asdict
 from hydra.core.hydra_config import HydraConfig
 from pathlib import Path
-from deep_chest.infra.utils import update_leaderboard
-
+from mlflow.tracking import MlflowClient
+from urllib.parse import urlparse
+from deep_chest.infra.utils import update_leaderboard, load_leaderboard
+from deep_chest.visualization.plots import build_transfer_loss_plot, build_precision_recall_plot, build_loss_plot
 
 
 
@@ -28,7 +31,6 @@ def log_tags(stage, model_type, dataset, extra_tags=None):
     if extra_tags:
         tags.update(extra_tags)
     mlflow.set_tags(tags)
-
 
 
 
@@ -63,42 +65,13 @@ def log_hyperparams(hyperparams: dict, prefix=""):
 
 
 #---------------Training results-------------------#
-def log_loss_plot(history, filename="loss.png"):
-    # 1. Get hydra output dir (unique per run)
-    out_dir = HydraConfig.get().runtime.output_dir
-    path = os.path.join(out_dir, filename)
-
-    # 2. Extract history safely
-    train_loss = history.get("loss", [])
-    val_loss = history.get("val_loss", [])
-
-    # 3. Plot
-    plt.figure()
-    plt.plot(train_loss, label="train_loss")
-    if val_loss:
-        plt.plot(val_loss, label="val_loss")
-    plt.xlabel("Epoch")
-    plt.ylabel("Loss")
-    plt.legend()
-    plt.title("Training Loss")
-
-    # 4. Save locally (hydra safe)
-    plt.savefig(path, bbox_inches="tight")
-    plt.close()
-
-    # 5. Log to MLflow
-    mlflow.log_artifact(path)
-
-
-
-
-
 def log_training_results(results):
 
     # -------- STANDARD --------
     if "history" in results:
         log_hyperparams(results.get("hyperparams", {}))
-        log_loss_plot(results["history"])
+        fig = build_loss_plot(results['history'])
+        log_figure(fig, "loss.png")
         return
 
     # -------- TRANSFER LEARNING --------
@@ -116,7 +89,10 @@ def log_training_results(results):
 
         # log loss
         if "history" in data:
-            log_loss_plot(data["history"], filename=f"{phase}_loss.png")
+            fig = build_loss_plot(data['history'])
+            log_figure(fig, f"{phase}_loss.png")
+
+
 
 
 #---------------------Metrics-----------------------------#
@@ -137,36 +113,26 @@ def build_per_class_df(metrics: dict):
 
 def log_per_class_df(df, filename="per_class_metrics.csv"):
     out_dir = HydraConfig.get().runtime.output_dir
+    print(f"Writing to unique dir: {out_dir}")  # Should be different for each parallel job
     path = os.path.join(out_dir, filename)
 
     df.to_csv(path, index=True)
     mlflow.log_artifact(path)
 
 
+def log_aggregate_metrics(agg_metrics):
+    for k, v in agg_metrics.items():
+        mlflow.log_metric(k, float(v))
 
 
 
+#------------------Confidence Interval-----------------------#
+def log_ci(df, filename="ci.csv"): # maybe json later
+    out_dir = HydraConfig.get().runtime.output_dir
+    path = os.path.join(out_dir, filename)
 
-# -------CHANEG, NOT CALCULATIONS HERE
-def log_metric_means(metrics, prefix=""):
-    for name, arr in metrics.items():
-        mlflow.log_metric(
-            f"{prefix}_{name}_mean",
-            float(np.mean(arr))
-        )
-#-----------
-
-
-
-
-
-
-
-
-
-
-
-
+    df.to_csv(path, index=True)
+    mlflow.log_artifact(path)
 
 
 
@@ -215,88 +181,14 @@ def log_param_count(model):
 
 
 #-------------------Combined plot for TL------------------------#
-
-
-#-------later change plots location!!!!!
-
-
-def log_transfer_loss_plot(results, filename="combined_loss.png"):
+def log_figure(fig, filename):
     out_dir = HydraConfig.get().runtime.output_dir
     path = os.path.join(out_dir, filename)
 
-    p1 = results["phase1"]["history"]
-    p2 = results["phase2"]["history"]
-
-    train1, val1 = p1["loss"], p1.get("val_loss", [])
-    train2, val2 = p2["loss"], p2.get("val_loss", [])
-
-    # concatenate
-    train_all = train1 + train2
-    val_all = val1 + val2
-
-    split_epoch = len(train1)
-
-    plt.figure()
-
-    plt.plot(train_all, label="train_loss")
-    if val_all:
-        plt.plot(val_all, label="val_loss")
-
-    # vertical line
-    plt.axvline(
-        x=split_epoch - 0.5,
-        linestyle="--",
-        label="fine_tuning_start"
-    )
-
-    plt.xlabel("Epoch")
-    plt.ylabel("Loss")
-    plt.title("Feature Extraction → Fine Tuning")
-    plt.legend()
-
-    plt.savefig(path, bbox_inches="tight")
-    plt.close()
+    fig.savefig(path, bbox_inches="tight")
+    plt.close(fig)
 
     mlflow.log_artifact(path)
-
-
-
-
-#-----------Precision Recall curve-------------#
-def plot_precision_recall(curves, filename='precision_recall_curve.png'):
-    out_dir = HydraConfig.get().runtime.output_dir
-    path = os.path.join(out_dir, filename)
-
-    plt.figure(figsize=(7, 7))
-
-    for class_name, data in curves.items():
-        plt.plot(
-            data["recall"],
-            data["precision"],
-            label=f"{class_name} (AP={data['ap']:.2f})"
-        )
-
-    plt.xlabel("Recall")
-    plt.ylabel("Precision")
-    plt.title("Precision–Recall Curves (Multilabel)")
-    plt.legend(loc="lower left", fontsize="small")
-    plt.grid(True)
-
-    plt.savefig(path)
-    plt.close()
-
-    mlflow.log_artifact(path)
-
-
-
-
-
-
-
-
-
-
-
 
 
 
@@ -316,6 +208,35 @@ def log_keras_model(model, filename="model.keras"):
     mlflow.log_artifact(str(model_path), artifact_path="model")
 
     return str(model_path)
+
+
+
+
+#-----------Log leaderboard-----------------------#
+def log_leaderboard(leaderboard):
+    mlflow.log_dict(
+        {"leaderboard": leaderboard},
+        "leaderboard.json"
+    )
+
+
+
+
+
+#--------------------Delete worst model so far-------------------#
+def delete_model_artifact(run_id):
+    client = MlflowClient()
+    run = client.get_run(run_id)
+
+    uri = run.info.artifact_uri
+    parsed = urlparse(uri)
+    base_path = Path(parsed.path)
+
+    model_dir = base_path / "model"
+
+    if model_dir.exists():
+        shutil.rmtree(model_dir)
+
 
 
 
@@ -343,14 +264,14 @@ def logging(run_name, artifacts, results, model, model_cfg, model_type, stage):
 
         # TL plot
         if "phase1" in results and "phase2" in results:
-            log_transfer_loss_plot(results)
+            fig = build_transfer_loss_plot(results)
+            log_figure(fig, "combined_loss.png")
 
         # df with metrics per class
         df = build_per_class_df(results['metrics'])
         log_per_class_df(df) # later put class name instead of class_id
 
         # metrics aggregation
-        #log_metric_means(results['metrics'])
         log_aggregate_metrics(results['agg_metrics'])
 
 
@@ -374,46 +295,25 @@ def logging(run_name, artifacts, results, model, model_cfg, model_type, stage):
             mlflow.set_tag("in_top_k", "false")
 
 
-        # log leaderboard!!!!!!
-
-        
-        #for rid in info["removed_run_ids"]:
-        #    delete_model_artifacts(rid)
-        #mlflow.log_artifact("mlflow_leaderboard.json") correct path
+        # log leaderboard (at that time, maybe later update appropiately)
+        leaderboard = load_leaderboard()
+        log_leaderboard(leaderboard)
 
 
-
+        print(info["removed_run_ids"])
+        # remove worst models
+        for rid in info["removed_run_ids"]:
+            delete_model_artifact(rid)
         
 
 
 
 
 #--------------------Log test results--------------------------#
-
-
-
-def log_aggregate_metrics(agg_metrics):
-    for k, v in agg_metrics.items():
-        mlflow.log_metric(k, float(v))
-
-
-
-
-def log_ci(df, filename="ci.csv"): # maybe json later
-    out_dir = HydraConfig.get().runtime.output_dir
-    path = os.path.join(out_dir, filename)
-
-    df.to_csv(path, index=True)
-    mlflow.log_artifact(path)
-
-
-
-
-
-def log_test_results(model_type, per_class_metrics, agg_metrics, curves, ci, stage='test'):
+def log_test_results(model_type, per_class_metrics, agg_metrics, curves, ci, run_id, stage='test'):
 
     with mlflow.start_run(run_name="test_evaluation"):
-        log_tags(stage, model_type, "test")
+        log_tags(stage, model_type, "test", {"run_id": run_id})
         df = build_per_class_df(per_class_metrics) # later put class name instead of class_id
         log_per_class_df(df) 
 
@@ -421,17 +321,8 @@ def log_test_results(model_type, per_class_metrics, agg_metrics, curves, ci, sta
         log_aggregate_metrics(agg_metrics)
 
         # PR curve
-        plot_precision_recall(curves)
+        fig = build_precision_recall_plot(curves)
+        log_figure(fig, "precision_recall_curve.png")
 
         # CI
         log_ci(ci)
-
-
-
-
-
-
-        
-
-
-
