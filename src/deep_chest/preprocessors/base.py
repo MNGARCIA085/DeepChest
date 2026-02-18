@@ -1,6 +1,8 @@
 import os
 import numpy as np
 import pandas as pd
+import tensorflow as tf
+from PIL import Image
 from tensorflow.keras.preprocessing.image import (
     ImageDataGenerator,
     load_img,
@@ -101,20 +103,6 @@ class DataModule:
         return self._flow(self.test_df, shuffle=False)
 
     
-    # ---------- Single-image preprocessing (inference) ----------#
-    def preprocess_image(self, image_path):
-        img = load_img(image_path, target_size=self.image_size)
-        x = img_to_array(img)
-        x = np.expand_dims(x, axis=0)
-
-        if self.preprocess_fn is None:
-            x = x / 255.0
-        else:
-            x = self.preprocess_fn(x)
-
-        return x
-
-
     #-----------------For weighting the loss------------------#
     @staticmethod
     def compute_pos_weights_from_generator(gen):
@@ -167,7 +155,87 @@ class DataModule:
 
 
 
+    # doc later------------------------
+    #---------To receive any kind of input for the API (path, bytes..)------#
+    #----------------
 
+
+
+    # ---------- Single-image preprocessing (inference) ----------#
+
+    # pure prep; no path
+    def preprocess_array(self, img_array):
+        """
+        img_array: np.ndarray (H, W, C) in uint8 or float32
+        Works for:
+            API uploads
+            DB blobs
+            Webcam frames
+            Anything
+        """
+
+        if img_array.shape[-1] == 4:  # RGBA; load_img is RGB, but PIL/bytes/arrays might not be
+            img_array = img_array[..., :3]
+
+
+        img = tf.image.resize(img_array, self.image_size)
+        x = tf.cast(img, tf.float32)
+        x = tf.expand_dims(x, axis=0)
+
+        if self.preprocess_fn is None:
+            x = x / 255.0
+        else:
+            x = self.preprocess_fn(x)
+
+        return x
+
+
+    # source adapters
+    
+
+    # from path
+    def load_from_path(self, image_path):
+        img = load_img(image_path)
+        return img_to_array(img)
+
+
+    # from bytes (for the API)
+    def load_from_bytes(self, image_bytes):
+        img = tf.io.decode_image(image_bytes, channels=3)
+        return img.numpy()
+    """
+    safer version:
+    def load_from_bytes(self, image_bytes):
+        img = tf.io.decode_image(image_bytes, channels=3, expand_animations=False)
+        img.set_shape([None, None, 3])
+        return img.numpy()
+    """
+
+    # from PIL
+    def load_from_pil(self, pil_img):
+        return np.array(pil_img)
+
+    # from array
+    def load_from_array(self, arr):
+        return arr
+
+    # dispatcher
+    def select_loader(self, x):
+        if isinstance(x, str):
+            return self.load_from_path(x)
+        elif isinstance(x, bytes):
+            return self.load_from_bytes(x)
+        elif isinstance(x, np.ndarray):
+            return self.load_from_array(x)
+        elif isinstance(x, Image.Image):
+            return self.load_from_pil(x)
+        else:
+            raise ValueError("Unsupported input type")
+
+    # preprocess
+    def preprocess(self, x):
+        data = self.select_loader(x)
+        return self.preprocess_array(data)
 
 
 
@@ -197,4 +265,24 @@ data.setup("inference")
 
 
 and skip weights.
+"""
+
+
+
+
+"""
+for one sample preds
+
+raw_input
+   ↓
+select_loader
+   ↓
+array (H,W,C)
+   ↓
+preprocess_array
+   ↓
+tensor (1,H,W,C)
+   ↓
+predictor
+
 """

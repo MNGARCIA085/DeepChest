@@ -1,37 +1,16 @@
-from deep_chest.preprocessors.base import DataModule
-from deep_chest.core.paths import get_data_root
-
+import numpy as np
+import ast
 import hydra
 from omegaconf import DictConfig
-
-
+from deep_chest.preprocessors.base import DataModule
+from deep_chest.core.paths import get_data_root
 from deep_chest.infra.config import init_mlflow
 from deep_chest.infra.utils import get_best_run_id, get_top_k_run_ids
 from deep_chest.infra.tracking import load_inference_bundle
 from deep_chest.preprocessors.registry import PREP_FN_REGISTRY
 from deep_chest.inference.base import Predictor
-
 from deep_chest.evaluation.evaluator import Evaluator
-
-import numpy as np
-
-
 from deep_chest.infra.logging import log_test_results
-
-
-
-import ast
-
-
-
-
-
-
-
-
-
-
-
 
 
 @hydra.main(config_path="../config", config_name="config", version_base=None)
@@ -40,8 +19,6 @@ def main(cfg: DictConfig):
     # 0. init mlflow
     init_mlflow(cfg.experiment_name)
 
-
-    
     # 1. Load model and artifacts from MLFlow
 
     # best run_id

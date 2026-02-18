@@ -1,9 +1,7 @@
 import numpy as np
 import tensorflow as tf
 
-# add thresholded preds????????
-
-# some models might havbe batch norm, have it in count; nmothing to do, training=False is enough
+# some models might havbe batch norm, have it in count; nothing to do, training=False is enough
 
 
 class Predictor:

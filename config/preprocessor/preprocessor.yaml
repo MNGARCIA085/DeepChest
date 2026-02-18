@@ -2,6 +2,7 @@ image_dir : "images-small"
 train_path: "train-small.csv"
 valid_path : "valid-small.csv"
 test_path : "test.csv"
+test_path_small: "test-small.csv"
 labels: ['Cardiomegaly', 
           'Emphysema', 
           'Effusion', 
