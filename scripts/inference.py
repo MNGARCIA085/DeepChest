@@ -1,5 +1,7 @@
 import hydra
 from omegaconf import DictConfig
+from pathlib import Path
+
 
 from deep_chest.infra.config import init_mlflow
 from deep_chest.core.paths import get_data_root
@@ -9,6 +11,7 @@ from deep_chest.infra.tracking import load_inference_bundle
 from deep_chest.preprocessors.registry import PREP_FN_REGISTRY
 from deep_chest.inference.base import Predictor
 from deep_chest.inference.pipeline import InferencePipeline
+from deep_chest.inference.builder import build_pipeline_from_run, build_pipeline_from_export
 
 
 
@@ -22,8 +25,8 @@ def main(cfg: DictConfig):
     # 1. Load model and artifacts from MLFlow
 
     # best run_id
-    a = get_best_run_id()
-    print(a)
+    run_id = get_best_run_id()
+    print(run_id)
 
     """
     if i want top-k
@@ -31,11 +34,11 @@ def main(cfg: DictConfig):
     print(b)
     """
 
-    data = load_inference_bundle(a)
+    data = load_inference_bundle(run_id)
 
     model = data.model
     model_type = data.model_type
-    labels = data.labels['labels']
+    labels = data.labels
 
 
     # 2. Data class
@@ -52,7 +55,7 @@ def main(cfg: DictConfig):
     data = DataModule(
         test_csv=TEST_PATH,
         image_dir=IMAGE_DIR,
-        labels=cfg.preprocessor.labels,
+        labels=labels,
         preprocess_fn=prep_fn,
     )
 
@@ -101,14 +104,14 @@ def main(cfg: DictConfig):
 
 
     # 5. Inference pipeline test (for the API)
-    print('----------Inference pipeline-------------')
+    print('\n----------Inference pipeline-------------')
     # to reinforce i need to pass an instance of a prep and an instance of a predictor
 
 
     prep_fn = PREP_FN_REGISTRY[model_type]
 
     prep = DataModule(
-        labels=cfg.preprocessor.labels,
+        labels=labels,
         preprocess_fn=prep_fn,
     )
 
@@ -131,7 +134,23 @@ def main(cfg: DictConfig):
 
 
     # 6. Using my builder
-    print('----------Using the builder (for the API)----------------')
+    print('\n----------Using the builder-------------------')
+
+    inf_pipeline = build_pipeline_from_run(run_id)
+    pred = inference_pipeline.predict(one_path)
+    print(pred)
+
+
+
+    print('\n----------Using the builder (for the API)----------------')
+
+    export_path = Path("test_model")
+    inf_pipeline = build_pipeline_from_export(export_path)
+    pred = inf_pipeline.predict(one_path)
+    print(pred)
+
+
+
 
 
 

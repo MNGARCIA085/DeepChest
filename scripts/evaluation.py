@@ -35,11 +35,7 @@ def main(cfg: DictConfig):
 
     model = data.model
     model_type = data.model_type
-    labels = data.labels['labels']
-
-    #convert to list
-    labels_list = ast.literal_eval(labels)
-
+    labels = data.labels
 
 
     # 2. Data class
@@ -52,7 +48,7 @@ def main(cfg: DictConfig):
     data = DataModule(
         test_csv=TEST_PATH,
         image_dir=IMAGE_DIR,
-        labels=labels_list,
+        labels=labels,
         preprocess_fn=prep_fn,
     )
 
@@ -70,7 +66,7 @@ def main(cfg: DictConfig):
     # example of thresholds
     thresholds = np.array([0.3, 0.5, 0.4, 0.4, 0.3, 0.5, 0.4, 0.4,0.3, 0.5, 0.4, 0.4,0.1, 0.2])
 
-    evaluator = Evaluator(thresholds, labels_list) # to labels later
+    evaluator = Evaluator(thresholds, labels)
     per_class_metrics, aggregate_metrics = evaluator.evaluate(y_true, y_preds_proba)  
 
 

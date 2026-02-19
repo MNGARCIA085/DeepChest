@@ -1,15 +1,16 @@
 import mlflow
 import json
+import ast 
 from mlflow.tracking import MlflowClient
 from pathlib import Path
 from dataclasses import dataclass
 from keras.models import load_model
 
 
-
+"""
 client = MlflowClient()
 experiment = client.get_experiment_by_name('deep_chest') # later pass it from config
-
+"""
 
 #------------------------Load data for inference--------------------------#
 @dataclass
@@ -22,6 +23,7 @@ class InferenceBundle:
 
 def load_inference_bundle(run_id: str, dst="artifacts"):
     client = MlflowClient()
+    experiment = client.get_experiment_by_name('deep_chest') # later pass it from config
 
     # --- RUN DATA ---
     run = client.get_run(run_id)
@@ -52,10 +54,13 @@ def load_inference_bundle(run_id: str, dst="artifacts"):
     with open(labels_local, "r") as f:
         labels = json.load(f)
 
+    # convert to list
+    labels_list = ast.literal_eval(labels['labels'])
+
 
     return InferenceBundle(
         model=model,
-        labels=labels,
+        labels=labels_list,
         model_type=model_type,
         prep_fn=prep_fn,
     )
