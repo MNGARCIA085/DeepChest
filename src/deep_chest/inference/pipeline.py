@@ -1,4 +1,3 @@
-
 class InferencePipeline:
     def __init__(self, prep, predictor):
         self.prep = prep
@@ -7,29 +6,6 @@ class InferencePipeline:
     def predict(self, x):
         data = self.prep.preprocess(x)
         return self.predictor.predict_one_probs(data)
-
-
-
-
-
-
-"""
-Wrapper
-
-prep+predictor -> best later for my fastapi app
-
-
-
-class InferencePipeline:
-    def __init__(self, prep, predictor):
-        self.prep = prep
-        self.predictor = predictor
-
-    def predict(self, x):
-        x = self.prep.transform(x)
-        return self.predictor.predict(x)
-"""
-
 
 
 """

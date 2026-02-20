@@ -9,8 +9,6 @@ from deep_chest.inference.pipeline import InferencePipeline
 from deep_chest.infra.tracking import load_inference_bundle
 
 
-
-
 # Low level builder, pure, no MLFlow
 def build_pipeline_from_components(model, model_type, labels):
     prep_fn = PREP_FN_REGISTRY[model_type]
@@ -35,6 +33,7 @@ def build_pipeline_from_run(run_id):
         model_type=data.model_type,
         labels=data.labels,
     )
+
 
 
 # for my API (load a model from a path and its metadata)

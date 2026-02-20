@@ -1,7 +1,7 @@
 import numpy as np
-import ast
 import hydra
 from omegaconf import DictConfig
+
 from deep_chest.preprocessors.base import DataModule
 from deep_chest.core.paths import get_data_root
 from deep_chest.infra.config import init_mlflow

@@ -1,28 +1,20 @@
 import tensorflow as tf
-from deep_chest.core.paths import get_data_root
-from deep_chest.preprocessors.base import DataModule
-from deep_chest.losses.weighted_bce import weighted_bce
-from deep_chest.training.callbacks import early_stopping
-from deep_chest.preprocessors.registry import PREP_FN_REGISTRY
-from deep_chest.models.registry import MODEL_REGISTRY
-from deep_chest.training.registry import TRAINER_REGISTRY
 
 # Hydra + OmegaConf
 import hydra
 from omegaconf import DictConfig
 
-from deep_chest.training.base import PhaseConfig, TrainingConfig
 
 from deep_chest.infra.config import init_mlflow
+from deep_chest.core.paths import get_data_root
+from deep_chest.preprocessors.base import DataModule
+from deep_chest.preprocessors.registry import PREP_FN_REGISTRY
+from deep_chest.models.registry import MODEL_REGISTRY
+from deep_chest.losses.weighted_bce import weighted_bce
+from deep_chest.training.callbacks import early_stopping
+from deep_chest.training.base import PhaseConfig, TrainingConfig
+from deep_chest.training.registry import TRAINER_REGISTRY
 from deep_chest.infra.logging import logging
-
-
-
-
-
-
-
-
 
 
 
@@ -37,7 +29,6 @@ def main(cfg: DictConfig):
     # get model type (nn, tree.....)
     model_type = cfg.model_type.name
     print(f"\nSelected model: {model_type}")
-
 
     print(cfg)
 
@@ -125,26 +116,17 @@ def main(cfg: DictConfig):
     from deep_chest.inference.base import Predictor
 
     predictor = Predictor(model)
-
     probs, y_true = predictor.predict_with_targets(data.val_gen)
-    #print(probs) # then i should pass through a threshold
-    #print(y_true)
-
-    #print(probs.shape)
 
 
     #-----------Evaluation tests----------------------#
     from deep_chest.evaluation.evaluator import Evaluator
 
     evaluator = Evaluator(0.5, cfg.preprocessor.labels)
-
     per_class_metrics, agg_metrics = evaluator.evaluate(y_true, probs)
-    #print(metrics)
-
 
 
     #----------------Logging---------------------#
-
     results['metrics'] = per_class_metrics
     results['agg_metrics'] = agg_metrics
 

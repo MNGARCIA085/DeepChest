@@ -49,7 +49,7 @@ def main(cfg: DictConfig):
     TEST_PATH = DATA_ROOT/ cfg.preprocessor.test_path_small # faster test
 
     # appropiate prep. fn.
-    prep_fn = PREP_FN_REGISTRY[model_type] # later puit it under the prep class??????
+    prep_fn = PREP_FN_REGISTRY[model_type]
 
     # test generator
     data = DataModule(
@@ -148,15 +148,6 @@ def main(cfg: DictConfig):
     inf_pipeline = build_pipeline_from_export(export_path)
     pred = inf_pipeline.predict(one_path)
     print(pred)
-
-
-
-
-
-
-
-
-
 
 
 

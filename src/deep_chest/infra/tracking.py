@@ -7,10 +7,6 @@ from dataclasses import dataclass
 from keras.models import load_model
 
 
-"""
-client = MlflowClient()
-experiment = client.get_experiment_by_name('deep_chest') # later pass it from config
-"""
 
 #------------------------Load data for inference--------------------------#
 @dataclass

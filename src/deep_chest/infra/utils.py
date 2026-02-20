@@ -1,12 +1,5 @@
-from pathlib import Path
 import json
-
-
-# later in conf -> paths!!!!!
-PROJECT_ROOT = Path(__file__).resolve().parents[3]
-TRACKING_DIR = PROJECT_ROOT / "tracking"
-LEADERBOARD_PATH = TRACKING_DIR / "leaderboard.json"
-
+from deep_chest.core.paths import PROJECT_ROOT, TRACKING_DIR, LEADERBOARD_PATH
 
 
 #------------------------Leaderboard-----------------------------#
