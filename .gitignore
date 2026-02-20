@@ -217,3 +217,9 @@ outputs/
 
 #mlflow
 mlruns/
+
+
+#mlflow db
+mlflow.db
+*.db
+mlruns/
