@@ -1,3 +1,5 @@
+
+
 class InferencePipeline:
     def __init__(self, prep, predictor):
         self.prep = prep

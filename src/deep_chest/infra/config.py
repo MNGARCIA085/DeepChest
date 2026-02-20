@@ -1,34 +1,27 @@
-import mlflow
-import os
 from pathlib import Path
-
-
-
-
+import os
+import mlflow
+import sys
 
 def init_mlflow(exp_name: str):
-    """
-    Initialize MLflow for both local and Colab runs.
-    - Local: uses sqlite DB + local mlruns folder
-    - Colab: uses mlruns folder inside repo
-    """
-    # detect if running in Colab
-    IN_COLAB = "COLAB_GPU" in os.environ
+    # detect Colab
+    IN_COLAB = "google.colab" in sys.modules
+
+    print(IN_COLAB)
 
     if IN_COLAB:
-        # Use mlruns folder inside repo
-        repo_root = Path(__file__).resolve().parents[3]  # adjust to repo root
+        # Repo root = current working directory in Colab
+        repo_root = Path.cwd()
         artifact_dir = repo_root / "mlruns"
         artifact_dir.mkdir(exist_ok=True)
         mlflow.set_tracking_uri(f"file://{artifact_dir}")
     else:
-        # Local machine: sqlite + mlruns
+        # Local machine: same as before
         repo_root = Path(__file__).resolve().parents[3]
-        mlflow.set_tracking_uri(f"sqlite:///{repo_root / 'mlflow.db'}")
         artifact_dir = repo_root / "mlruns"
         artifact_dir.mkdir(exist_ok=True)
+        mlflow.set_tracking_uri(f"sqlite:///{repo_root / 'mlflow.db'}")
 
-    # Set experiment
     mlflow.set_experiment(exp_name)
     print(f"MLflow initialized. URI: {mlflow.get_tracking_uri()}")
 
