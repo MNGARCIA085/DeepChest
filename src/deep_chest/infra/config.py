@@ -17,7 +17,7 @@ def init_mlflow(exp_name: str):
 
     if IN_COLAB:
         # Use mlruns folder inside repo
-        repo_root = Path(__file__).resolve().parents[2]  # adjust to repo root
+        repo_root = Path(__file__).resolve().parents[3]  # adjust to repo root
         artifact_dir = repo_root / "mlruns"
         artifact_dir.mkdir(exist_ok=True)
         mlflow.set_tracking_uri(f"file://{artifact_dir}")

@@ -22,7 +22,7 @@ cryptography==46.0.3
 cycler==0.12.1
 databricks-sdk==0.77.0
 decorator==5.2.1
--e git+https://github.com/MNGARCIA085/DeepChest.git@927953c43ac8629577e053092c721ccabe64531d#egg=deep_chest
+-e git+https://github.com/MNGARCIA085/DeepChest.git@b7becc39cee993cab1c4c5c435d27ade83df1e85#egg=deep_chest
 defusedxml==0.7.1
 docker==7.1.0
 docopt==0.6.2
@@ -95,6 +95,7 @@ parso==0.8.5
 pexpect==4.9.0
 pickleshare==0.7.5
 pillow==12.1.0
+pip-chill==1.0.3
 pipreqs==0.5.0
 platformdirs==4.5.1
 prompt_toolkit==3.0.52
