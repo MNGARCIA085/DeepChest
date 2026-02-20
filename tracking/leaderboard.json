@@ -1,0 +1,14 @@
+{
+  "metric_name": "val_auprc_mean",
+  "top_k": 2,
+  "runs": [
+    {
+      "run_id": "1be36b4311b9425bb1ca35a490b5a86c",
+      "score": 0.07488612085580826
+    },
+    {
+      "run_id": "4d87097735424706bb9a8f329004244d",
+      "score": 0.0680302232503891
+    }
+  ]
+}

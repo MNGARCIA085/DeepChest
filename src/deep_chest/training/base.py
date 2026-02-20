@@ -1,10 +1,11 @@
 import tensorflow as tf
-
-
-
 from dataclasses import dataclass, field
 from typing import List, Any, Optional
 
+
+
+
+#------------Dataclasses-------------------#
 
 @dataclass
 class PhaseConfig:
@@ -20,11 +21,7 @@ class TrainingConfig:
     # metrics created outside ideally, but for quick tests:
     metrics: List[Any] = field(default_factory=list)
 
-    # -------- standard --------
-    lr: Optional[float] = 1e-3
-    epochs: Optional[int] = 1 # improve this later; i think i shouildnty pass this and i should pass phase1
-
-    # -------- transfer learning --------
+    # -------- standard (only phase1); transfer learning (2 phases)--------
     backbone_name: Optional[str] = "backbone"
     phase1: Optional[PhaseConfig] = field(default_factory=PhaseConfig)
     phase2: Optional[PhaseConfig] = field(
@@ -62,7 +59,7 @@ class StandardTrainer(BaseTrainer):
     def train(self, train_gen, val_gen, loss, callbacks):
 
         self.compile_model(
-            lr=self.cfg.lr,
+            lr=self.cfg.phase1.lr,
             loss=loss,
             metrics=self.cfg.metrics,
         )
@@ -70,7 +67,7 @@ class StandardTrainer(BaseTrainer):
         history = self.fit_model(
             train_gen,
             val_gen,
-            self.cfg.epochs,
+            self.cfg.phase1.epochs,
             callbacks,
         )
 
@@ -78,8 +75,8 @@ class StandardTrainer(BaseTrainer):
         return {
                 "history": history.history,
                 "hyperparams": {
-                    "lr": self.cfg.lr,
-                    "epochs": self.cfg.epochs,
+                    "lr": self.cfg.phase1.lr,
+                    "epochs": self.cfg.phase1.epochs,
                 }
             }
 

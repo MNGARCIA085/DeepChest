@@ -131,9 +131,19 @@ def main(cfg: DictConfig):
     results['agg_metrics'] = agg_metrics
 
 
-    logging('training', artifacts, results, model, model_cfg, model_type, 'train')
+    if cfg.tracking.enabled:
+        logging('training', artifacts, results, model, model_cfg, model_type, 'train')
+    else: # colab logic
+        print('metrics')
+        print('agg_metrics')
+        # maybe save model and download it later, show config, do some plot.....
 
 
 
 if __name__==main():
     main()
+
+
+
+#python -m scripts.training model_type=cnn model_type.training.phase1.epochs=4
+# in colab -> tracking.enabled=false

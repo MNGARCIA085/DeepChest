@@ -2,4 +2,4 @@ strategy: standard
 
 phase1:
   lr: 1e-4
-  epochs: 2
+  epochs: 3

@@ -7,13 +7,17 @@ defaults:
   - training: cnn
   #- override hydra/launcher: joblib
 
-
 random_state: 42
 experiment_name: deep_chest
 
+tracking:
+  enabled: true
+  #uri: "sqlite:///mlflow.db"
 
-#run_tuning_name: tuning
-#run_training_name: training
+
+
+
+
 #hydra:
 #  launcher:
 #    n_jobs: 2
