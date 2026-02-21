@@ -1,0 +1,16 @@
+{
+  "leaderboard": {
+    "metric_name": "val_auprc_mean",
+    "top_k": 2,
+    "runs": [
+      {
+        "run_id": "1be36b4311b9425bb1ca35a490b5a86c",
+        "score": 0.07488612085580826
+      },
+      {
+        "run_id": "862b7369c8754d94a45e859b8d21947d",
+        "score": 0.059121426194906235
+      }
+    ]
+  }
+}
