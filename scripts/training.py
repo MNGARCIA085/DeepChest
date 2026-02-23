@@ -134,10 +134,11 @@ def main(cfg: DictConfig):
     if cfg.tracking.enabled:
         logging('training', artifacts, results, model, model_cfg, model_type, 'train')
     else: # colab logic
-        print('metrics')
-        print('agg_metrics')
+        print(per_class_metrics)
+        print(agg_metrics)
         # maybe save model and download it later, show config, do some plot.....
-
+        # from the leaderboard i know the best models, if my model is better i will save it
+        # for later download
 
 
 if __name__==main():
