@@ -40,6 +40,7 @@ Since image models are large, inferior models are not stored to avoid unnecessar
 
 ## Project Structure
 
+```
 project-root/
 │
 ├── scripts/ # Training, evaluation, inference
@@ -49,7 +50,7 @@ project-root/
 ├── tracking/ # Saved top-k models
 ├── requirements.txt
 ├── gradio_app/ # Simple gradio app
-
+```
 
 ## Setup
 
