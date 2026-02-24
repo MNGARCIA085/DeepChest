@@ -120,12 +120,53 @@ For simplicity, a remote MLflow server is not deployed in this portfolio project
 Models trained in Colab can later be promoted and logged locally if desired.
 
 
+
+## Tests
+
+Unit tests are provided to verify data preprocessing, model building, training, and inference pipelines.
+
+Run all tests using pytest:
+
+```
+pytest tests/ --disable-warnings -q
+```
+
+You can also run individual test files:
+
+
+```
+pytest tests/inference/test_inference.py
+```
+
+The tests cover:
+
+- DataModule preprocessing and generators 
+- Model building
+- Training workflows (StandardTrainer and TransferLearningTrainer)
+- Prediction and inference pipelines (Predictor and InferencePipeline)
+- Metrics and evaluation logic
+
+Tests use small dummy data and lightweight models to run quickly on CPU, so you don’t need a GPU.
+
+
+
 ## Web demo
 
 A lightweight web interface is built using Gradio to demonstrate real-time inference.
 
 The app allows users to upload a chest X-ray image and receive predicted probabilities for the 14 conditions.
 
+Run
+
+```
+python gradio_app/app.py
+```
+
+Open your browser and go to:
+
+```
+http://127.0.0.1:7860/
+```
 
 
 ## Included Demo Artifacts

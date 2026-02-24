@@ -10,30 +10,9 @@ from deep_chest.inference.builder import (
 )
 
 
-
 # Load your pipeline (choose one method)
 export_path = Path("test_model")
 pipeline = build_pipeline_from_export(export_path)
-
-
-
-# Gradio prediction function
-def predict_imagev0(img: Image.Image):
-    """
-    img: PIL image from Gradio
-    """
-    # Call your pipeline
-    preds = pipeline.predict(img)
-    
-    # Format output nicely (assume dict of label:prob)
-    if isinstance(preds, dict):
-        return {str(k): float(v) for k, v in preds.items()}
-    else:
-        return str(preds)
-
-
-
-
 
 
 class_names = ['Cardiomegaly', 
@@ -53,51 +32,32 @@ class_names = ['Cardiomegaly',
 
 
 
-"""
-[[0.25179872 0.5920954  0.17985962 0.63353497 0.17521143 0.47014755
-  0.6151251  0.29562163 0.5354593  0.23120105 0.30441943 0.701831
-  0.1022056  0.2491951 ]]
-"""
-
-
-
-
-def predict_imagev1(img: Image.Image):
-    """
-    img: PIL image from Gradio
-    """
-    # Call your pipeline
+def predict_image(img):
     preds = pipeline.predict(img)
-    print(preds)
     probs = preds.squeeze().tolist()
-
-    return {cls: float(p) for cls, p in zip(class_names, probs)}
-
-
-
-def predict_image(img: Image.Image):
-    """
-    img: PIL image from Gradio
-    """
-    # Call your pipeline
-    preds = pipeline.predict(img)
-    print(preds)
-    probs = preds.squeeze().tolist()
-
-    return [[cls, float(p)] for cls, p in zip(class_names, probs)]
-
-
     
+    table = [[cls, float(p)] for cls, p in zip(class_names, probs)]
+    
+    threshold = 0.5
+    positives = [
+        cls for cls, p in zip(class_names, probs)
+        if p > threshold
+    ]
+    
+    findings_text = ", ".join(positives) if positives else "No findings above threshold."
+    
+    return table, findings_text
+
+
     
 # Build Gradio interface
 iface = gr.Interface(
     fn=predict_image,
     inputs=gr.Image(type="pil"),
-    #outputs=gr.Label(), -> with v1
-    outputs = gr.Dataframe(
-        headers=["Condition", "Probability"],
-        datatype=["str", "number"]
-    ),
+    outputs = [
+        gr.Dataframe(headers=["Condition", "Probability"]),
+        gr.Textbox(label="Findings Above Threshold")
+    ],
     title="Image Prediction",
     description="Upload an image and get predictions"
 )
@@ -107,20 +67,3 @@ if __name__ == "__main__":
 
 # python gradio_app/app.py
 # http://127.0.0.1:7860/
-
-
-
-
-"""
-def predict(image):
-    probs = model(image).squeeze().tolist()
-    
-    threshold = 0.5
-    results = {
-        cls: float(p)
-        for cls, p in zip(class_names, probs)
-        if p > threshold
-    }
-    
-    return results if results else {"No finding above threshold": 1.0}
-"""

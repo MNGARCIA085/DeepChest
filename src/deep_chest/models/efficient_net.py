@@ -20,6 +20,8 @@ class EfficientNetConfig:
     backbone_variant: str = "B0" # → architecture choice
     backbone_name: str = "backbone" # → layer name in the graph
 
+    weights: str | None = "imagenet"
+
 
 
 BACKBONE_REGISTRY = {
@@ -34,7 +36,7 @@ def build_efficientnet(cfg: EfficientNetConfig):
     backbone_cls = BACKBONE_REGISTRY[cfg.backbone_key]
     backbone_base = backbone_cls(
         include_top=False,
-        weights="imagenet",
+        weights=cfg.weights,
         input_shape=cfg.input_shape,
     )
 
