@@ -66,3 +66,33 @@ def build_cnn(cfg: CNNConfig):
     )(x)
 
     return models.Model(inputs, outputs, name=cfg.name)
+
+
+
+"""
+By using the config class:
+
+We’ve separated:
+
+- External config system (Hydra) → how parameters are passed
+- Internal model contract (CNNConfig) → what the model actually needs
+
+    -> That’s decoupling configuration from implementation
+"""
+
+
+
+"""
+Cleaner pattern (later if needed)
+
+class CNNModel:
+
+    def __init__(self, cfg: CNNConfig):
+        self.cfg = cfg
+        self.model = self._build()
+
+    def _build(self):
+        ...
+
+
+"""
