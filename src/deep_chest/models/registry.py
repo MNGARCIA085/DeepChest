@@ -2,6 +2,7 @@
 
 from .cnn import CNNConfig, build_cnn
 from .efficient_net import EfficientNetConfig, build_efficientnet
+from .densenet121 import DenseNetConfig, build_densenet
 
 
 # model registry includes config + build
@@ -10,6 +11,7 @@ from .efficient_net import EfficientNetConfig, build_efficientnet
 MODEL_REGISTRY = {
     "cnn": (CNNConfig, build_cnn),
     "efficientnet": (EfficientNetConfig, build_efficientnet),
+    "densenet": (DenseNetConfig, build_densenet),
 }
 
 """

@@ -22,7 +22,7 @@ class DataModule:
         image_dir=None,
         labels=[],
         x_col="Image",
-        batch_size=8,
+        batch_size=4, # put in config later; 8
         image_size=(320, 320),
         preprocess_fn=None,
         seed=1,
